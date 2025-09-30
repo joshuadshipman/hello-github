@@ -4,5 +4,12 @@ Testing
 
 My name is JD. This is my first GitHub repository!
 
+Added About Me section
 
-“Added About Me section”
+## My Interests
+
+- Coding
+- Learning GitHub
+- Open source
+
+Added interests section
