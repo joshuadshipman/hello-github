@@ -1,0 +1,142 @@
+{
+  "gate": "pre-container-specialist-validation",
+  "timestamp": "2026-10-16T20:45:10.497Z",
+  "files_validated": [
+    "voice_webhook_server.js"
+  ],
+  "checks_total": 26,
+  "checks_passed": 26,
+  "checks_failed": 0,
+  "checks": [
+    {
+      "name": "G1-SYNTAX: Node.js syntax valid",
+      "pass": true,
+      "evidence": "node -c exit 0"
+    },
+    {
+      "name": "G2-NO-HARDCODED: Hardcoded insured name \"John Doe\"",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "name": "G2-NO-HARDCODED: Hardcoded policy \"POL-99201\"",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "name": "G2-NO-HARDCODED: Hardcoded AxiScore 98",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "name": "G2-NO-HARDCODED: Hardcoded band \"STRONG\"",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "name": "G2-NO-HARDCODED: Hardcoded location \"Main St & 5th Ave\"",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "name": "G2-NO-HARDCODED: Hardcoded damage \"Rear bumper & trunk\"",
+      "pass": true,
+      "evidence": "clean"
+    },
+    {
+      "name": "G3-DEPTH: ≥8 FNOL field captures defined",
+      "pass": true,
+      "evidence": "Found 8 field captures"
+    },
+    {
+      "name": "G3-DEPTH: ≥8 substantive questions defined",
+      "pass": true,
+      "evidence": "Found 8 questions ≥20 chars"
+    },
+    {
+      "name": "G3-BRANCH: Injury conditional branching exists",
+      "pass": true,
+      "evidence": "injury branching found"
+    },
+    {
+      "name": "G3-FIELD: callerName capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: policyNumber capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: dateOfLoss capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: locationOfLoss capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: lossDescription capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: vehicleInfo capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: injuryStatus capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G3-FIELD: policeReport capture defined",
+      "pass": true,
+      "evidence": "present"
+    },
+    {
+      "name": "G4-RECORD: Call recording enabled in TwiML",
+      "pass": true,
+      "evidence": "<Record> found"
+    },
+    {
+      "name": "G5-ARCHIVE: Transcript file write exists",
+      "pass": true,
+      "evidence": "fs write operation found"
+    },
+    {
+      "name": "G5-ARCHIVE: Transcript path configured",
+      "pass": true,
+      "evidence": "transcript path reference found"
+    },
+    {
+      "name": "G6-HEALTH: /health endpoint exists",
+      "pass": true,
+      "evidence": "/health route found"
+    },
+    {
+      "name": "G6-HEALTH: Version reporting in health response",
+      "pass": true,
+      "evidence": "version info found"
+    },
+    {
+      "name": "G7-NO-FAKE: ACORD payload built from session data",
+      "pass": true,
+      "evidence": "Session field data reference found"
+    },
+    {
+      "name": "G8-EXTRACT: SpeechResult is read from Twilio",
+      "pass": true,
+      "evidence": "SpeechResult capture found"
+    },
+    {
+      "name": "G8-EXTRACT: Speech stored in structured fields",
+      "pass": true,
+      "evidence": "Speech → field mapping found"
+    }
+  ]
+}

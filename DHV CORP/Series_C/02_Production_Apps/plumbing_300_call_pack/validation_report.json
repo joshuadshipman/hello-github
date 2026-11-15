@@ -1,0 +1,66 @@
+{
+  "pack": "PLUMBING_300_CALL_REALISTIC_PACK_V1",
+  "timestamp": "2026-11-08T20:44:47.446Z",
+  "totalCalls": 300,
+  "passedCalls": 300,
+  "failedCallsCount": 0,
+  "stateMachinePassedCount": 300,
+  "containmentPassedCount": 300,
+  "secondListenerSlotGuardPassedCount": 300,
+  "callReviewZeroDefectCount": 300,
+  "fieldAccuracyRate": 100,
+  "averageAxiScore": 99.17,
+  "groupStats": {
+    "burst_pipe_shutoff": {
+      "total": 45,
+      "passed": 45,
+      "failed": 0
+    },
+    "water_heater_repair_replace": {
+      "total": 40,
+      "passed": 40,
+      "failed": 0
+    },
+    "gas_water_heater_hazard": {
+      "total": 25,
+      "passed": 25,
+      "failed": 0
+    },
+    "sewer_main_backup": {
+      "total": 35,
+      "passed": 35,
+      "failed": 0
+    },
+    "slab_leak_high_bill": {
+      "total": 25,
+      "passed": 25,
+      "failed": 0
+    },
+    "drain_toilet_clog": {
+      "total": 35,
+      "passed": 35,
+      "failed": 0
+    },
+    "exterior_hose_bib_prv": {
+      "total": 20,
+      "passed": 20,
+      "failed": 0
+    },
+    "maintenance_flush_upsell": {
+      "total": 20,
+      "passed": 20,
+      "failed": 0
+    },
+    "homeowner_cost_and_fact_inquiries": {
+      "total": 25,
+      "passed": 25,
+      "failed": 0
+    },
+    "adversarial_bilingual_garbled_asr": {
+      "total": 30,
+      "passed": 30,
+      "failed": 0
+    }
+  },
+  "failedCalls": []
+}
