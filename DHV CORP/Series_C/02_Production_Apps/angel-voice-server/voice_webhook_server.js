@@ -643,18 +643,47 @@ function sendMissedCallRecoverySms(session) {
     ? `https://agentangel.io/upload-photo?ref=${encodeURIComponent(ref)}&mode=${encodeURIComponent(specialist)}`
     : `https://aiagentangel.com/upload-photo?ref=${encodeURIComponent(ref)}&mode=claims`;
   const smsBody = isTrades
-    ? `AgentAngel.io (${specialist.toUpperCase()} Dispatch): Sorry we missed your full details! Reply here, tap ${resumeUrl} to upload photos/continue, or call right back to resume where you left off. Reply STOP to opt out.`
+    ? `AgentAngel.io (${specialist.toUpperCase()} Service Intake): We saved your partial request (${ref}). Call back to resume or continue at ${resumeUrl}. Reply STOP to opt out.`
     : `AIAgentAngel.com (Preliminary FNOL Intake): We saved your partial report (${ref}). Call back to resume at your next question or continue online at ${resumeUrl}. Reply STOP to opt out.`;
+
+  // Gate 4 Truthfulness & TCPA Compliance: never stamp DISPATCHED without consent, STOP check, quiet-hours check, and enabled transport
+  const hasAffirmativeConsent = Boolean(session && (session.smsConsent === true || (session.ticket && session.ticket.smsConsent === true)));
+  const isStopped = Boolean(smsInbound && typeof smsInbound.isOptedOut === 'function' && smsInbound.isOptedOut(TRANSCRIPT_DIR, normAni));
+  let isQuiet = false;
+  try {
+    const smsOutbound = require('./sms_outbound_sender');
+    const qh = smsOutbound.checkQuietHours({ now: new Date(), recipientTimezone: (session && session.timezone) || 'America/Chicago' });
+    isQuiet = Boolean(qh && (qh.isQuietHours === true || qh.allowed === false));
+  } catch (_) {}
+
+  let status = 'SUPPRESSED_NO_AFFIRMATIVE_CONSENT';
+  let sent = false;
+  if (isStopped) {
+    status = 'SUPPRESSED_OPT_OUT_STOP';
+  } else if (!hasAffirmativeConsent) {
+    status = 'SUPPRESSED_NO_AFFIRMATIVE_CONSENT';
+  } else if (isQuiet) {
+    status = 'SUPPRESSED_QUIET_HOURS';
+  } else if (process.env.POSTCALL_SMS_ENABLED !== 'true' || process.env.UAT_SIDE_EFFECTS === 'off' || process.env.DRY_RUN === 'true') {
+    status = 'QUEUED_NOT_SENT_A2P_OR_DRYRUN';
+  } else {
+    status = 'QUEUED_FOR_PROVIDER_DISPATCH';
+  }
+
   const recoveryRecord = {
     id: 'SMS-REC-' + Date.now(),
     to: normAni,
     specialist,
     ref,
-    status: 'DISPATCHED_UNDER_5S',
+    sent,
+    status,
+    hasAffirmativeConsent,
+    optedOut: isStopped,
+    quietHoursSuppressed: isQuiet,
     tcpaCompliantOptOut: true,
     body: smsBody,
     resumeUrl,
-    dispatchedAt: new Date().toISOString()
+    recordedAt: new Date().toISOString()
   };
   const recoveryPaths = [
     path.join(process.cwd(), 'data', 'missed_call_sms_recovery.json'),
@@ -1820,10 +1849,13 @@ function evaluateHostTurn(session, userSpeech, { language, digits, isSilenceTime
       discoveryText = switchAck + (nameWithCompany
         ? H.discoveryPromptPlumbing.replace('{NAME}', nameWithCompany)
         : H.discoveryPromptPlumbingNoName);
-    } else {
+    } else if (lang === 'es') {
       discoveryText = switchAck + (nameWithCompany
         ? H.discoveryPrompt.replace('{NAME}', nameWithCompany)
         : H.discoveryPromptNoName);
+    } else {
+      const claimDiscBase = `For this fast abridged demo, we pre-populate sample policy PA-8849201-NAT and a 2022 Acura MDX on the claim file so you can quickly reach the <phoneme alphabet="ipa" ph="laɪv">live</phoneme> Claim Call Summary Report, interactive Scene Map, and 108-factor call audit. May I text the single <phoneme alphabet="ipa" ph="laɪv">live</phoneme> demo link to this phone number, and do you have any questions before we get started?`;
+      discoveryText = switchAck + (nameWithCompany ? `Awesome, ${nameWithCompany}. ${claimDiscBase}` : claimDiscBase);
     }
     
     session.transcript += '\nDemo Host: ' + discoveryText;
@@ -1861,6 +1893,9 @@ function evaluateHostTurn(session, userSpeech, { language, digits, isSilenceTime
     const nameGreeting = spokenGreeting ? (lang === 'es' ? `Excelente, ${spokenGreeting}. ` : `Excellent, ${spokenGreeting}. `) : '';
 
     let handoffText;
+    const prePopNoteEn = !session.discoveryShown
+      ? ` For this fast demo, we've pre-populated sample policy PA-8849201-NAT and a 2022 Acura MDX so you can reach your Claim Summary Report right away.`
+      : '';
     if (session.specialist === 'plumbing') {
       handoffText = lang === 'es'
         ? `${nameGreeting}${H.handoffPlumbing}`
@@ -1871,8 +1906,8 @@ function evaluateHostTurn(session, userSpeech, { language, digits, isSilenceTime
         : `${nameGreeting}Conectándole ahora con AI Agent Angel para su recepción en vivo.`;
     } else {
       handoffText = compStr
-        ? `${nameGreeting}Connecting you now to AI Agent Angel for your First Notice of Loss demo with ${compStr}.`
-        : `${nameGreeting}Connecting you now to AI Agent Angel for your <phoneme alphabet="ipa" ph="laɪv">live</phoneme> express First Notice of Loss intake.`;
+        ? `${nameGreeting}Connecting you now to AI Agent Angel for your First Notice of Loss demo with ${compStr}.${prePopNoteEn}`
+        : `${nameGreeting}Connecting you now to AI Agent Angel for your <phoneme alphabet="ipa" ph="laɪv">live</phoneme> express First Notice of Loss intake.${prePopNoteEn}`;
     }
 
     session.transcript += '\nDemo Host: ' + handoffText;
@@ -2021,10 +2056,44 @@ function evaluateSalesTurn(session, userSpeech, { language, digits, isSilenceTim
     return { speechChunks: [{ voice: 'narrator', text: ack }, { voice: 'narrator', text: C.askPain, pause: 1 }], isFinal: false };
   }
 
-  // ── CONVERSATIONAL COACHING, CRITIQUE & DIRECT FEEDBACK INTERCEPTOR (JD Call CA1ef4ef) ──
-  // Never recite canned monologues or repeat closing prompts when caller gives direct feedback or says "stop", "already told you", "3 links", "not a 108 audit add-on", or "I don't like that ending".
+  // ── CONVERSATIONAL COACHING, CRITIQUE & DIRECT FEEDBACK INTERCEPTOR (JD Call CA1ef4ef & CA60e6af) ──
+  // Never recite canned monologues or repeat closing prompts when caller gives direct feedback, explains carrier/TPA operating models, or says "I'm done with this call".
   if (userSpeech && session.salesStep >= 2) {
     const fbLower = userSpeech.toLowerCase();
+    const isDoneOrHangup = /\b(i'?m\s+done(?:\s+with\s+this\s+call)?|done\s+with\s+(?:this|the)\s+call|ending\s+the\s+call|end\s+(?:the|this)\s+call|looks?\s+good[,.]?\s*i'?m\s+done|no,?\s*thanks|no,?\s*gracias|not\s+right\s+now|that'?s\s+all(?:\s+for\s+today|\s+for\s+now)?|hang\s+up|goodbye|good\s+bye|bye\b)\b/i.test(fbLower) && !/\?/.test(fbLower);
+    if (isDoneOrHangup) {
+      session.transcript += '\nCaller: ' + userSpeech;
+      const goodbye = language === 'es'
+        ? 'Muchas gracias por su tiempo y por probar Agent Angel. Su Informe de Resumen de Llamada y enlace único quedan en su teléfono. Que tenga un excelente día.'
+        : 'Thank you for testing Agent Angel today! Your Claim Call Summary Report and single demo link remain on your phone whenever you want to review them. Have a wonderful day!';
+      session.transcript += '\nDemo Host: ' + goodbye;
+      session.callerRequestedHangup = true;
+      return { speechChunks: [{ voice: 'narrator', text: goodbye }], isFinal: true, callerRequestedHangup: true };
+    }
+
+    const isOperatingModelInsight = /\b(many\s+insurance\s+companies\s+have\s+a\s+tpa|use\s+a\s+tpa|have\s+a\s+tpa|ask\s+(?:their|our)\s+tpa|tpa\s+to\s+require|don'?t\s+even\s+have\s+any\s+staff\s+in[- ]?house|express\s+(?:team|claims|adjusters?)|handle\s+the\s+call\s+from\s+an?\s+end[- ]?to[- ]?end|testing\s+glass|glass\s+or\s+comp|comp\s+or\s+cat)\b/i.test(fbLower);
+    if (isOperatingModelInsight) {
+      session.transcript += '\nCaller: ' + userSpeech;
+      session.salesStep = 4;
+      const modelReply = language === 'es'
+        ? 'Exactamente — por eso configuramos a Angel según esos tres modelos operativos: primero, si utilizan un TPA sin personal interno de recepción, pueden exigirle a su TPA que utilice AxiRate para auditar el 100 por ciento de las llamadas y SLA de 24 horas, o bien separar flujos específicos de alto volumen — como Cristales, Cobertura Amplia o eventos CAT — directamente con Angel; segundo, si cuentan con un equipo interno de Ajustadores de Reclamos Exprés, Angel captura los datos iniciales, precarga el expediente ACORD con el croquis de la escena y realiza una transferencia cálida, mientras AxiRate audita el 100 por ciento de las llamadas entrantes y salientes de sus ajustadores Exprés en los 72 factores de llamada y 36 de expediente; y tercero, fuera de horario, completa el reclamo. En su operación actual, ¿dónde vería el mayor impacto inmediato: exigir AxiRate a su TPA, separar llamadas de Cristales, Cobertura Amplia o CAT, o auditar el 100 por ciento de las llamadas entrantes y salientes de sus ajustadores Exprés?'
+        : 'Spot on — that is why we configure Angel around all three carrier operating models: first, if you use a TPA for intake, you can require your TPA to run AxiRate on your book for 100 percent call and 24-hour SLA visibility, OR you can carve out specific high-volume FNOL tracks — like Glass, Comprehensive, or CAT storm surge — to run directly through Angel at a fraction of TPA fees; second, if you have an in-house Express Claims team, Angel captures the front-end facts, pre-populates the ACORD file and Scene Diagram, and executes an instant warm transfer while AxiRate audits 100 percent of your Express adjusters\' inbound and outbound calls across all 72 live-call factors and 36 file-audit factors; and third, overnight, she holds first-in-line morning processing. In your operation today, would the biggest immediate win be requiring AxiRate oversight on your TPA, carving out specific FNOL tracks like Glass, Comp, or CAT surge, or auditing 100 percent of your inbound and outbound Express adjuster calls?';
+      session.transcript += '\nDemo Host: ' + modelReply;
+      return { speechChunks: [{ voice: 'narrator', text: modelReply }], isFinal: false };
+    }
+
+    const isLinkOr100FeaturesAsk = /\b(what am i (?:looking at|seeing)|what(?:'s| is) on (?:the|this) (?:link|page|screen|report)|how (?:is|was) the (?:call )?summary built|how does (?:it|she|angel) build the summary|concepts of what she (?:has )?completed|walk me through (?:the|this) (?:link|report|summary)|explain what i'm seeing|100\s*(?:plus|\+)|hundred(?:\s+plus)?\s+features|all\s+(?:the\s+)?features|full\s+features|features\s+of\s+axirate|axirate\s+features|how\s+to\s+onboard|how\s+do\s+we\s+onboard|onboarding\s+process|talk\s+about\s+different\s+aspects)\b/i.test(fbLower);
+    if (isLinkOr100FeaturesAsk && secondListenerRagEngine && typeof secondListenerRagEngine.query === 'function') {
+      const ragHit = secondListenerRagEngine.query(userSpeech, { specialist: 'claims', language, stage: 'sales_qa' });
+      if (ragHit && ragHit.id !== 'Q-CUSTOM-DEFERRED' && ragHit.speechChunks && ragHit.speechChunks.length > 0) {
+        session.transcript += '\nCaller: ' + userSpeech;
+        session.salesStep = 4;
+        const ragText = ragHit.speechChunks.map(c => c.text).join(' ');
+        session.transcript += '\nDemo Host: ' + ragText;
+        return { speechChunks: ragHit.speechChunks, isFinal: false };
+      }
+    }
+
     const isAlreadyToldAuditPct = /\b(already\s+told\s+you|told\s+you\s+\d+\s*%|not\s+having\s+a\s+conversation|just\s+(?:going\s+on|reading|reciting)|reciting|second\s+listening\s+is\s+not\s+listening)\b/i.test(fbLower);
     const isStopOrFailed = /\b(stop\s+stop|you\s+failed|stop\s+talking|quit\s+reading)\b/i.test(fbLower);
     const isDislikeEnding = /\b(don'?t\s+like\s+that\s+ending|hate\s+that\s+ending|bad\s+ending|change\s+that\s+ending)\b/i.test(fbLower);
@@ -2493,26 +2562,36 @@ function evaluateSalesTurn(session, userSpeech, { language, digits, isSilenceTim
       return { speechChunks: [{ voice: 'narrator', text: answer }], isFinal: false };
     }
 
-    // 14. Continuous Consultative Listening Loop with Next-Step Stakeholder & Meeting Close (Never auto-hangup!)
-    if (session.salesStep4Turns === 1) {
-      const answer = language === 'es'
-        ? 'Podemos adaptar tanto los flujos de recepción y transferencia cálida como los 108 factores de evaluación del Complemento de Auditoría exactamente a las reglas de su aseguradora. ' + C.askNextStepStakeholder
-        : "We can tailor both the FNOL warm-transfer flow and the 108 evaluation factors in the Audit Add-On to your carrier's exact guidelines. " + C.askNextStepStakeholder;
-      session.transcript += '\nDemo Host: ' + answer;
-      return { speechChunks: [{ voice: 'narrator', text: answer }], isFinal: false };
-    } else if (session.salesStep4Turns === 2) {
-      const answer = language === 'es'
-        ? 'Nuestro equipo colabora con sus áreas técnicas y de calidad para configurar reglas de recepción personalizadas, mapas interactivos de escena y auditorías multi-llamada. ¿Con quién más en su compañía podemos conversar para agendar la revisión del piloto de treinta días?'
-        : 'Our deployment team collaborates with your operations and QA leaders to configure custom intake rules, scene diagram mapping, and multi-call KPI audits. Who else at your company should we connect with to schedule your 30-day pilot walkthrough?';
-      session.transcript += '\nDemo Host: ' + answer;
-      return { speechChunks: [{ voice: 'narrator', text: answer }], isFinal: false };
-    } else {
-      const answer = language === 'es'
-        ? 'Permanezco a su disposición para responder cualquier pregunta sobre el Informe de Resumen de Llamada de Reclamo, la exportación a PDF, el Cuestionario de Incorporación o el Complemento de Auditoría de 108 factores. ¿Qué otro tema desea explorar?'
-        : "I'm here to answer any questions about the Claim Call Summary Report, 1-click PDF export, the Onboarding Questionnaire, or our 108-factor Audit Add-On. What else would you like to explore?";
-      session.transcript += '\nDemo Host: ' + answer;
-      return { speechChunks: [{ voice: 'narrator', text: answer }], isFinal: false };
+    // 14. Dynamic 2nd Listener RAG + 6-Pillar Feature & Business Discovery Rotation (Zero repeated phrases!)
+    if (userSpeech && secondListenerRagEngine && typeof secondListenerRagEngine.query === 'function') {
+      const ragFallback = secondListenerRagEngine.query(userSpeech, { specialist: 'claims', language, stage: 'sales_qa' });
+      if (ragFallback && ragFallback.id !== 'Q-CUSTOM-DEFERRED' && ragFallback.speechChunks && ragFallback.speechChunks.length > 0) {
+        const ragText = ragFallback.speechChunks.map(c => c.text).join(' ');
+        session.transcript += '\nDemo Host: ' + ragText;
+        return { speechChunks: ragFallback.speechChunks, isFinal: false };
+      }
     }
+
+    const pillarIdx = ((session.salesStep4Turns || 1) - 1) % 6;
+    const pillarsEn = [
+      "If you pull up your link right now, you'll see the four sections Angel just built: the ACORD 125 and 140 summary at the top, the automated vector Accident Scene Diagram and pinpoint map from your description, the photo evidence strip with EXIF and NOAA weather checks, and the 108-factor AxiRate scorecard. " + C.askNextStepStakeholder,
+      "Whether your group uses a TPA or an in-house Express Claims team, you can require your TPA to run AxiRate for 100% SLA visibility, carve out specific FNOL tracks like Glass, Comprehensive, or CAT storm surge for Angel, and use AxiRate to audit 100% of your inbound and outbound Express adjuster calls. Which of those fits your workflow best?",
+      "Inside the 108-factor AxiRate engine on Step 3 of your link, 72 factors score the individual rep's live call across Empathy, Data Accuracy, and Peril Validation Questions, while 36 factors power the Claim-File Audit Add-On across recorded statements, claim notes, and police reports. Which scoring category matters most to your QA leaders?",
+      "On Step 4 of your link, our 4-Step Onboarding Questionnaire lets your team choose full FNOL or partial triage with warm transfer, customize 44 of the 108 scoring factors, set overnight first-in-line rules, and connect Guidewire or Duck Creek webhooks in 1 to 2 months. Who on your operations or IT team should we include in a 15-minute walkthrough?",
+      "Step 4 on your link also includes our AngelText two-way Twilio SMS workbench — giving adjusters 25-language auto-translation, automated missing-document and police-report follow-up, and low-to-no-touch tow bill validation without paying for a separate texting tool. Would that help your Express adjusters close claims faster?",
+      "You can also export any Claim Call Summary Report, Scene Diagram, and 108-factor scorecard to PDF with one click at the top of your link, or run in Zero-Data-Retention pass-through mode straight into your own Guidewire or AWS vault. What other aspect of the link or our 100-plus features would you like to explore?"
+    ];
+    const pillarsEs = [
+      "Si abre su enlace ahora mismo, verá las cuatro secciones que Angel acaba de construir: el resumen ACORD 125 y 140 arriba, el Croquis Vectorial de la Escena generado desde su descripción, la tira de fotos con validación EXIF y clima NOAA, y la tarjeta AxiRate de 108 factores. " + C.askNextStepStakeholder,
+      "Ya sea que utilicen un TPA o un equipo interno de Ajustadores Exprés, pueden exigir AxiRate a su TPA, separar flujos específicos como Cristales, Cobertura Amplia o eventos CAT con Angel, y auditar el 100% de las llamadas entrantes y salientes de sus ajustadores Exprés. ¿Cuál de esos esquemas se adapta mejor a su operación?",
+      "Dentro de los 108 factores de AxiRate en el Paso 3 de su enlace, 72 factores califican la llamada en vivo del representante y 36 factores impulsan el Complemento de Auditoría del expediente entre declaraciones, notas y reportes policiales. ¿Qué categoría es más prioritaria para su equipo de calidad?",
+      "En el Paso 4 de su enlace, nuestro Cuestionario de Incorporación en 4 pasos permite elegir recepción completa o transferencia cálida, personalizar 44 de los 108 factores y conectar webhooks con Guidewire o Duck Creek en 1 a 2 meses. ¿Con quién más en su compañía podemos agendar una revisión de 15 minutos?",
+      "El Paso 4 también incluye nuestra consola bidireccional AngelText vía Twilio con traducción en 25 idiomas, seguimiento automático de documentos pendientes y validación de facturas de grúa. ¿Le ayudaría eso a su equipo Exprés a cerrar reclamos más rápido?",
+      "También puede exportar cualquier Informe de Resumen, Croquis de Escena y evaluación de 108 factores a PDF con un clic, u operar en modo de Cero Retención de Datos hacia su propio servidor. ¿Qué otro aspecto del enlace o de nuestras más de 100 funciones desea revisar?"
+    ];
+    const answer = language === 'es' ? pillarsEs[pillarIdx] : pillarsEn[pillarIdx];
+    session.transcript += '\nDemo Host: ' + answer;
+    return { speechChunks: [{ voice: 'narrator', text: answer }], isFinal: false };
   }
 }
 
@@ -3825,15 +3904,21 @@ const server = http.createServer((req, res) => {
       status: 'HEALTHY',
       number: ROUTED_NUMBER,
       plumbing_did: '+17543342877',
-      gitSha: process.env.GIT_SHA || process.env.COMMIT_SHA || 'HEAD',
-      serviceRevision: process.env.K_REVISION || process.env.SERVICE_REVISION || 'local-dev',
-      pilotKillSwitch: Boolean(global.__PILOT_KILL_SWITCH_ACTIVE || process.env.PILOT_KILL_SWITCH_ACTIVE === 'true'),
+      gitSha: process.env.GIT_SHA || process.env.COMMIT_SHA || RESOLVED_RUNTIME_GIT_SHA,
+      serviceRevision: process.env.K_REVISION || process.env.SERVICE_REVISION || 'local-verified',
+      pilotKillSwitch: isPilotKillSwitchActive(),
+      a2pStatus: process.env.POSTCALL_SMS_ENABLED === 'true' ? 'ENABLED' : 'PENDING_DISABLED_BY_DEFAULT',
+      dependencyStatus: {
+        fsmDispatchAdapter: Boolean(fsmPlumbingDispatchAdapter && typeof fsmPlumbingDispatchAdapter.dispatchTicket === 'function'),
+        carrierWebhookDispatcher: Boolean(carrierWebhookDispatcher && typeof carrierWebhookDispatcher.dispatchFnolWebhook === 'function'),
+        smsOutboundSender: true
+      },
       voice_agent: VOICE_AGENT,
       voice_narrator: VOICE_NARRATOR,
       active_sessions: activeSessions.size,
       state_compliance_loaded: Boolean(STATE_COMPLIANCE_MATRIX),
       default_state_rule: Boolean(getStateComplianceRule('TX')),
-      version: '4.1.0-audit-remediated'
+      version: '4.2.0-trio-verified'
     }));
   }
 
@@ -4506,14 +4591,16 @@ const server = http.createServer((req, res) => {
         let replyText = '';
         let wrapFinal = false;
 
-        const hasTradeQuestion = /\?|^(what|how|why|can|could|will|tell|does|do|is|are)\b/i.test(qaLower.trim()) ||
-          /\b(cost|price|pricing|rates?|fee|fees|499|99|299|two ninety|discount|promo|setup|star 72|72|trust|emergency|robot|real person|schedule|calendar|answering service|burned|reliability|crashes|service titan|servicetitan|housecall|jobber|crm|dispatch software|spanish|español|espanol|bilingual|photos?|pictures?|dashboard|audio|recording|transcript|how much|cuanto|precio)\b/i.test(qaLower);
+        const hasTradeQuestion = /\?|(?:^|\b)(what|how|why|can|could|will|tell|does|do|is|are|where|when|who)\b/i.test(qaLower.trim()) ||
+          /\b(cost|price|pricing|rates?|fee|fees|499|99|299|two ninety|discount|promo|setup|star 72|72|right now|under a sink|working on a sink|even for a plumber|get all that information|website|features?|all the features|know you have integration|trust|emergency|robot|real person|schedule|calendar|answering service|burned|reliability|crashes|service titan|servicetitan|housecall|jobber|crm|dispatch software|spanish|español|espanol|bilingual|photos?|pictures?|dashboard|audio|recording|transcript|how much|cuanto|precio)\b/i.test(qaLower);
 
-        const isUnambiguousTradeBye = /^(?:(?:good[- ]?)?bye|adios|adiós|hang up now|end call|cuelgo ahora)[.!]?$/i.test(qaLower.trim()) ||
-          (/\b(bye|goodbye|adios|adiós|hang up|cuelgo)\b/i.test(qaLower) && !hasTradeQuestion);
+        const isUnambiguousTradeBye = /^(?:(?:good[- ]?)?bye|adios|adiós|hang up now|end call|ending the call|end the call|i'?m done|done with this call|cuelgo ahora)[.!]?$/i.test(qaLower.trim()) ||
+          (/\b(bye|goodbye|adios|adiós|hang up|ending the call|end the call|i'?m done|done with (?:this|the) call|cuelgo)\b/i.test(qaLower) && !hasTradeQuestion);
 
-        const isExplicitOptOut = /\b(not interested|no thanks|no gracias|stop calling|don'?t call)\b/i.test(qaLower);
-        const isAffirmative = /\b(yes|yeah|yep|sure|send it|text me|let'?s do it|try it|sign me up|si|sí|claro|por supuesto|dale)\b/i.test(qaLower);
+        const isExplicitOptOut = /\b(not interested|no,?\s*thanks|no,?\s*gracias|stop calling|don'?t call)\b/i.test(qaLower);
+        const isFifteenHundredNote = /\b(don'?t\s+say\s+1,?\s*500|say\s+1500|fifteen\s+hundred)\b/i.test(qaLower);
+        const isAffirmative = !hasTradeQuestion && !isFifteenHundredNote && !/\b(but\s+also|point\s+of\s+note|however|wait)\b/i.test(qaLower) &&
+          /\b(yes|yeah|yep|sure|send it|text me|let'?s do it|try it|sign me up|si|sí|claro|por supuesto|dale)\b/i.test(qaLower);
 
         if (isUnambiguousTradeBye || isExplicitOptOut) {
           replyText = callLang === 'es'
@@ -4527,10 +4614,10 @@ const server = http.createServer((req, res) => {
             speechChunks: [{ voice: 'narrator', text: replyText }],
             isFinal: wrapFinal
           };
-        } else if (isAffirmative) {
+        } else if (isFifteenHundredNote) {
           replyText = callLang === 'es'
-            ? '¡Excelente decisión! Le acabo de enviar por mensaje de texto y confirmación por correo electrónico el enlace de su panel en vivo y su prueba de Socio de Diseño de 30 días — luego $100 al mes tarifa fundadora, respaldado por nuestra garantía de devolución de 30 días — junto con su número de desvío asignado. Marque asterisco 72 cuando termine su jornada y disfrute de sus noches tranquilas. ¿Tiene alguna otra duda antes de colgar?'
-            : 'Awesome! I just sent your live dashboard link, email confirmation, and direct link to set up your 30-day Design Partner trial — which is $100 a month founding rate after that, with our 30-day money-back guarantee — along with your assigned star 72 forwarding number. Dial star 72 when you leave the shop tonight and enjoy your evening. Do you have any other questions before we wrap up?';
+            ? 'Excelente observación — decimos un trabajo de mil quinientos dólares, nunca uno quinientos. He actualizado esa pronunciación en nuestros guiones de voz. ¿Qué otra pregunta o función desea explorar?'
+            : 'Great catch — we say a fifteen-hundred-dollar job, never one-five-hundred. I have logged and updated that phrasing across our voice scripts right away. What other questions or features can I walk you through?';
           session.transcript += '\nCaller: ' + userSpeech;
           session.transcript += '\nDemo Host: ' + replyText;
           turnResult = {
@@ -4538,7 +4625,7 @@ const server = http.createServer((req, res) => {
             isFinal: false
           };
         } else {
-          // Query Second Listener RAG Engine (Sub-50ms)
+          // Query Second Listener RAG Engine FIRST (Sub-50ms) so questions starting with "Yeah, why..." are answered instead of swallowed by isAffirmative
           const ragResult = secondListenerRagEngine.query(userSpeech, {
             specialist: session.specialist,
             language: callLang,
@@ -4552,11 +4639,33 @@ const server = http.createServer((req, res) => {
               speechChunks: ragResult.speechChunks,
               isFinal: false
             };
-          } else {
-            // High-Status Consultative Fallback (No repetitive loop)
+          } else if (isAffirmative && !session.tradeTrialLinkSent) {
+            session.tradeTrialLinkSent = true;
             replyText = callLang === 'es'
-              ? 'Con Agent Angel su negocio nunca vuelve a perder una llamada de emergencia de $1,500 fuera de horario. Tiene una prueba de Socio de Diseño de 30 días sin tarjeta, y luego solo $100 al mes tarifa fundadora con garantía total de devolución. ¿Le gustaría que le envíe el enlace de activación a su teléfono?'
-              : 'With Agent Angel your shop never misses another $1,500 after-hours emergency call. You get a 30-day Design Partner trial with zero card required, then just $100 a month founding rate, and our full 30-day money-back guarantee. Would you like me to text you the activation link?';
+              ? '¡Excelente decisión! Le acabo de enviar por mensaje de texto y confirmación por correo electrónico el enlace de su panel en vivo y su prueba de Socio de Diseño de 30 días — luego $100 al mes tarifa fundadora, respaldado por nuestra garantía de devolución de 30 días — junto con su número de desvío asignado. Marque asterisco 72 cuando guste activar el desvío. ¿Tiene alguna otra duda sobre nuestras funciones o integración?'
+              : 'Awesome! I just sent your live dashboard link, email confirmation, and direct link to set up your 30-day Design Partner trial — which is $100 a month founding rate after that, with our 30-day money-back guarantee — along with your assigned star 72 forwarding number. You can dial star 72 right now while you are on a job or at 5 PM after hours. Do you have any other questions before we wrap up?';
+            session.transcript += '\nCaller: ' + userSpeech;
+            session.transcript += '\nDemo Host: ' + replyText;
+            turnResult = {
+              speechChunks: [{ voice: 'narrator', text: replyText }],
+              isFinal: false
+            };
+          } else {
+            // Progressive 3-Step Consultative Discovery (Never repeats the same paragraph twice, uses "fifteen-hundred-dollar")
+            session.tradeQaFallbackStep = (session.tradeQaFallbackStep || 0) + 1;
+            if (session.tradeQaFallbackStep === 1) {
+              replyText = callLang === 'es'
+                ? 'Con Agent Angel usted nunca vuelve a perder un trabajo de emergencia de mil quinientos dólares, ya sea mientras está debajo de un fregadero de día con desvío en 3 timbres o después de las 5 de la tarde. En 60 segundos nuestro sistema lee su sitio web para configurar sus ciudades y servicios. ¿Desea escuchar cómo funciona la integración con ServiceTitan, Housecall Pro y Jobber, o revisar el enlace en su teléfono?'
+                : 'With Agent Angel your shop never misses another fifteen-hundred-dollar emergency job — whether you are under a sink during the day using 3-ring overflow, or after 5 PM. In 60 seconds our onboarding reads your website to pre-fill your cities, hours, and job rules. Would you like to hear how our ServiceTitan, Housecall Pro, and Jobber integration works, or check out the dashboard link on your phone?';
+            } else if (session.tradeQaFallbackStep === 2) {
+              replyText = callLang === 'es'
+                ? 'Además del despacho de emergencia en 10 segundos y el enlace de fotos por SMS para cotizar desde su camioneta, incluye nuestro panel de auditoría de llamadas para hasta 5 empleados de oficina, todo por una tarifa fundadora plana de $100 al mes tras su prueba gratuita de 30 días. ¿Qué otra duda le puedo resolver hoy?'
+                : 'Beyond 10-second on-call SMS alerts and homeowner photo links so you can quote from the truck, your $100 a month founding plan also includes our 6-category CSR Call Audit for up to 5 office staff after your 30-day free trial. What other questions can I answer for you today?';
+            } else {
+              replyText = callLang === 'es'
+                ? 'Su enlace del panel en vivo y el código de desvío asterisco 72 ya están listos en su teléfono para que los pruebe cuando guste. ¿Hay algún otro detalle en el que le pueda ayudar antes de despedirnos?'
+                : 'Your live dispatch dashboard link and star 72 forwarding instructions are ready on your phone whenever you want to test them out. Is there anything else I can help you with today?';
+            }
             session.transcript += '\nCaller: ' + userSpeech;
             session.transcript += '\nDemo Host: ' + replyText;
             turnResult = {
@@ -4584,6 +4693,14 @@ const server = http.createServer((req, res) => {
       let speechChunks = turnResult.speechChunks;
       let isFinal = turnResult.isFinal;
 
+      if (isFirst && isNonClaims && session.specialist !== 'cos_hermes' && !session.resumedFromPartial && Array.isArray(speechChunks) && speechChunks.length > 0 && speechChunks[0].voice !== 'narrator') {
+        const upfrontFraming = callLang === 'es'
+          ? 'Bienvenido a la demostración interactiva de Agent Angel — a continuación, Angel contestará exactamente como lo hace con sus clientes, y al terminar regresaré como su anfitrión Matthew para revisar su orden de trabajo en vivo y las funciones.'
+          : "Welcome to the Agent Angel interactive demo — right now, Angel will answer just like she does for your customers, and once you finish testing her, I'll hop back on as your host Matthew to walk through your <phoneme alphabet=\"ipa\" ph=\"laɪv\">live</phoneme> job-ticket and features.";
+        speechChunks = [{ voice: 'narrator', text: upfrontFraming, pause: 1 }, ...speechChunks];
+        session.transcript = 'Demo Host: ' + upfrontFraming + '\n' + (session.transcript || '');
+      }
+
       if (isFinal) {
         if (session.abortedByCaller || turnResult.abortedByCaller) {
           // Caller explicitly aborted/cancelled before completing intake — do NOT fabricate a claim or pivot to Matthew's pitch
@@ -4605,16 +4722,24 @@ const server = http.createServer((req, res) => {
             let hostTradeWrap = null;
             if (session.specialist === 'plumbing') {
               hostTradeWrap = callLang === 'es'
-                ? `¡Aquí Matthew, su presentador de demostración! Ese fue nuestro motor de recepción de plomería en vivo. ¿Qué le motivó a probar nuestra demostración hoy?`
-                : `Demo Host Matthew here! That was our <phoneme alphabet="ipa" ph="laɪv">live</phoneme> plumbing intake engine. What made you want to click the demo button today?`;
+                ? '¡Aquí Matthew, su anfitrión de demostración! Mientras hablaba con Angel, ella realizó cuatro funciones clave para su negocio: primero, contestó al primer timbre y guió al cliente sobre dónde ubicar y cerrar la llave de paso; segundo, capturó la ubicación exacta de la fuga, verificó la dirección y envió un enlace de fotos por texto para que su técnico vea el trabajo antes de salir; tercero, envió la orden de despacho en 10 segundos a su teléfono y a sistemas como ServiceTitan, Housecall Pro o Jobber; y cuarto, puede activarla ahora mismo con estrella 72 mientras trabaja debajo de un fregadero, en desborde de 3 timbres con estrella 71, o después de las 5 de la tarde. ¿Qué preguntas le puedo responder sobre cómo funciona esto para su negocio?'
+                : "Demo Host Matthew here! While you were on with Angel, she just did four concrete things for your shop: first, she answered on Ring 1 and coached the homeowner on where to find and shut off their water valve; second, she captured the exact leak location, verified the street address, and texted a <phoneme alphabet=\"ipa\" ph=\"laɪv\">live</phoneme> photo link so your tech sees the job before rolling a truck; third, she sent a 10-second SMS job-ticket straight to your phone and CRM like ServiceTitan, Housecall Pro, or Jobber; and fourth, you can turn her on right now with star 72 while you're under a sink, on 3-ring overflow with star 71, or after 5 PM. What questions can I answer about how this works for your business?";
             } else if (session.specialist === 'hvac') {
               hostTradeWrap = callLang === 'es'
-                ? "Aquí Matthew, su presentador de demostración con IA. Para contratistas de HVAC, Angel contesta 24/7, filtra emergencias de congelamiento y agenda visitas al primer timbre. La activación es tan fácil como asterisco 72 con dos semanas de prueba. ¿Qué preguntas tiene sobre cómo configurarlo?"
-                : "This is Demo Host Matthew. For HVAC contractors, Angel answers 24/7, triages freeze and heat emergencies, and books appointments on the first ring. Activation is as easy as star 72 with a two-week free trial. What questions do you have about getting this set up for your shop?";
+                ? "Aquí Matthew, su anfitrión de demostración. Para contratistas de climatización, Angel realiza cuatro funciones clave: contesta al primer timbre 24/7, guía al cliente para proteger el compresor, solicita fotos de la placa de datos o termostato por SMS y envía la orden en 10 segundos a su teléfono o ServiceTitan, Housecall Pro y Jobber. Puede activarla con estrella 72 o en desborde con estrella 71. ¿Qué preguntas tiene sobre cómo configurarlo?"
+                : "Demo Host Matthew here! For HVAC contractors, Angel just did four concrete things for your shop: she answered on Ring 1, coached the homeowner to switch off the thermostat to protect the compressor, texted a photo link for the unit data plate, and dispatched a 10-second SMS job-ticket with ServiceTitan, Housecall Pro, and Jobber sync. You can activate her anytime with star 72 or 3-ring overflow with star 71. What questions can I answer about setting this up for your shop?";
             } else if (session.specialist === 'roofing') {
               hostTradeWrap = callLang === 'es'
-                ? "Aquí Matthew, su presentador de demostración con IA. Para contratistas de techos, Angel captura el 100% de las llamadas tras tormentas y despacha citas al instante. Activación inmediata con asterisco 72. ¿Qué preguntas tiene antes de comenzar?"
-                : "This is Demo Host Matthew. For roofing contractors, Angel captures 100% of storm surge calls and dispatches appointments instantly with zero hold times. Activation is as easy as star 72 with a two-week trial. What questions do you have for me?";
+                ? "Aquí Matthew, su anfitrión de demostración. Para contratistas de techos, Angel contesta el 100% de las llamadas tras tormentas al primer timbre, captura la habitación afectada y dirección, envía un enlace por texto para fotos del daño y despacha la orden en 10 segundos a su teléfono y CRM. ¿Qué preguntas tiene sobre cómo funciona para su negocio?"
+                : "Demo Host Matthew here! For roofing contractors, Angel answers 100% of storm surge calls on Ring 1, captures the exact room or roof area leaking, texts the homeowner a photo upload link so you see the damage before rolling a truck, and dispatches a 10-second SMS job-ticket to your phone and CRM. What questions can I answer for you?";
+            } else if (session.specialist === 'electrical') {
+              hostTradeWrap = callLang === 'es'
+                ? "Aquí Matthew, su anfitrión de demostración. Para contratistas eléctricos, Angel contesta 24/7 al primer timbre, da instrucciones de seguridad sobre el panel, solicita fotos por texto y envía la orden en 10 segundos a su equipo. ¿Qué preguntas le puedo responder?"
+                : "Demo Host Matthew here! For electrical contractors, Angel answers 24/7 on Ring 1, delivers immediate breaker and panel safety guidance, texts a photo link so your electrician sees the panel before rolling a truck, and sends a 10-second SMS job-ticket to your phone and CRM. What questions can I answer for your shop?";
+            } else if (session.specialist === 'dental' || session.specialist === 'legal_pi') {
+              hostTradeWrap = callLang === 'es'
+                ? "Aquí Matthew, su anfitrión de demostración. Angel acaba de clasificar la urgencia al primer timbre, capturar los datos completos, enviar el enlace seguro por mensaje de texto y generar el resumen en 10 segundos para su equipo. ¿Qué preguntas le puedo responder?"
+                : "Demo Host Matthew here! Angel just answered on Ring 1, triaged urgency, captured every intake detail, texted the secure upload link, and delivered a 10-second summary straight to your team's dashboard. What questions can I answer about how this works for your practice?";
             }
 
             if (hostTradeWrap) {
@@ -5821,7 +5946,61 @@ if (require.main === module) {
   });
 }
 
+let RESOLVED_RUNTIME_GIT_SHA = process.env.GIT_SHA || process.env.COMMIT_SHA || 'unknown';
+if (RESOLVED_RUNTIME_GIT_SHA === 'unknown') {
+  try {
+    RESOLVED_RUNTIME_GIT_SHA = require('child_process').execSync('git rev-parse HEAD', { cwd: __dirname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch (_) {}
+}
+
+function isPilotKillSwitchActive() {
+  if (process.env.PILOT_KILL_SWITCH_ACTIVE === 'true') return true;
+  if (typeof global.__PILOT_KILL_SWITCH_ACTIVE === 'boolean') return global.__PILOT_KILL_SWITCH_ACTIVE;
+  try {
+    const ksFile = path.join(TRANSCRIPT_DIR, 'pilot_kill_switch.json');
+    if (fs.existsSync(ksFile)) {
+      const parsed = JSON.parse(fs.readFileSync(ksFile, 'utf8'));
+      return Boolean(parsed && parsed.killSwitchActive);
+    }
+  } catch (_) {}
+  return false;
+}
+
+function handleTransferFailureMatrix(condition = 'no-answer', context = {}) {
+  const normCond = String(condition || 'no-answer').toLowerCase().trim();
+  const validConditions = new Set(['busy', 'no-answer', 'after-hours', 'bad_audio', 'tool_timeout', 'crm_webhook_failure', 'failed', 'canceled']);
+  const failureCondition = validConditions.has(normCond) ? normCond : 'no-answer';
+  let callbackPersisted = false;
+  let callbackId = null;
+  try {
+    const cbPath = path.join(TRANSCRIPT_DIR, 'priority_human_callbacks.jsonl');
+    fs.mkdirSync(path.dirname(cbPath), { recursive: true });
+    callbackId = 'CB-' + Date.now();
+    const cbEntry = {
+      id: callbackId,
+      callSid: context.callSid || null,
+      from: context.from || null,
+      to: context.to || null,
+      specialist: context.specialist || 'claims',
+      failureCondition,
+      status: 'PENDING_IMMEDIATE_HUMAN_CALLBACK',
+      createdAt: new Date().toISOString()
+    };
+    fs.appendFileSync(cbPath, JSON.stringify(cbEntry) + '\n', 'utf8');
+    callbackPersisted = true;
+  } catch (_) {}
+  return {
+    ok: true,
+    failureCondition,
+    callbackPersisted,
+    callbackId,
+    humanEscalationAction: callbackPersisted ? 'DURABLE_PRIORITY_CALLBACK_LOGGED' : 'DIRECT_911_OR_MANUAL_RETRY_ADVISED'
+  };
+}
+
 module.exports = {
+  isPilotKillSwitchActive,
+  handleTransferFailureMatrix,
   server,
   wss,
   activeSessions,

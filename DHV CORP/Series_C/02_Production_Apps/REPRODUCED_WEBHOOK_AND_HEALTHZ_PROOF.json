@@ -1,0 +1,106 @@
+{
+  "title": "AgentAngel Plumbing & Auto Claims Reproduced Webhook & Runtime Execution Proof",
+  "commitSha": "94367da283a6df3fe49f7519af73c8ae68f1f0a8",
+  "executedAt": "2026-11-16T17:06:39.675Z",
+  "nodeVersion": "v24.11.1",
+  "allPassed": true,
+  "passedCount": 6,
+  "totalCount": 6,
+  "checks": [
+    {
+      "id": "GATE-1-8-HEALTHZ-SHA",
+      "passed": true,
+      "statusCode": 200,
+      "response": {
+        "status": "HEALTHY",
+        "number": "+14699166767",
+        "plumbing_did": "+17543342877",
+        "gitSha": "94367da283a6df3fe49f7519af73c8ae68f1f0a8",
+        "serviceRevision": "angel-voice-server-94367da2",
+        "pilotKillSwitch": false,
+        "a2pStatus": "ENABLED",
+        "dependencyStatus": {
+          "fsmDispatchAdapter": true,
+          "carrierWebhookDispatcher": true,
+          "smsOutboundSender": true
+        },
+        "voice_agent": "Polly.Joanna-Neural",
+        "voice_narrator": "Polly.Matthew-Neural",
+        "active_sessions": 0,
+        "state_compliance_loaded": true,
+        "default_state_rule": true,
+        "version": "4.2.0-trio-verified"
+      }
+    },
+    {
+      "id": "GATE-2-3-PLUMBING-GAS-AND-HUMAN-TRANSFER",
+      "passed": true,
+      "gasTurnTwiML": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n  <Gather input=\"speech dtmf\" timeout=\"10\" speechTimeout=\"3\" bargeIn=\"true\" speechModel=\"phone_call\" enhanced=\"true\" hints=\"leak, clog, burst pipe, water heater, drain, toilet, faucet, kitchen, bathroom, outside faucet, sewer, emergency, schedule, photos, photo link, yes, correct, accurate, español\" action=\"/voice/handle\" method=\"POST\" language=\"en-US\">\n    <Say voice=\"Polly.Joanna-Neural\">For your immediate safety, if you smell gas near your water heater or gas line, please do not touch any electrical switches or flames, shut off the gas valve only if safe to do so, and step outside while we alert our on-call emergency team and log your priority request. I&apos;m so sorry to hear that, and I understand completely — we are on it right away.</Say>\n    <Say voice=\"Polly.Joanna-Neural\">Since water is actively leaking, I have marked this as a same-day emergency — do you need our on-call plumber out as soon as possible today, or what arrival window works best for you?</Say>\n    <Pause length=\"1\"/>\n  </Gather>\n  <Redirect method=\"POST\">/voice/handle</Redirect>\n</Response>",
+      "humanTransferTurnTwiML": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n  <Gather input=\"speech dtmf\" timeout=\"10\" speechTimeout=\"3\" bargeIn=\"true\" speechModel=\"phone_call\" enhanced=\"true\" hints=\"leak, clog, burst pipe, water heater, drain, toilet, faucet, kitchen, bathroom, outside faucet, sewer, emergency, schedule, photos, photo link, yes, correct, accurate, español\" action=\"/voice/handle\" method=\"POST\" language=\"en-US\">\n    <Say voice=\"Polly.Joanna-Neural\">Of course — I am connecting your call directly to our on-call human staff right now. In case the line is busy, let me also log your callback details for immediate priority follow-up: What day and time window works best for you?</Say>\n  </Gather>\n  <Redirect method=\"POST\">/voice/handle</Redirect>\n</Response>"
+    },
+    {
+      "id": "GATE-2-3-9-CLAIMS-911-HOLD-4101-AND-NO-FICTIONAL-ENRICHMENT",
+      "passed": true,
+      "emergencyTriggered": [
+        "L-06"
+      ],
+      "journeyHold": {
+        "allowed": false,
+        "reason": "HELD_EMERGENCY_911_DIRECTIVE_UNRESOLVED",
+        "blocked_stage": "ALL"
+      },
+      "coverageTriggered": [
+        "L-04"
+      ],
+      "enrichmentSkippedReason": "PRODUCTION_FNOL_STRICT_FACT_PRESERVATION"
+    },
+    {
+      "id": "GATE-4-SMS-STOP-CONSENT-QUIET-HOURS",
+      "passed": true,
+      "stopSendRes": {
+        "sent": false,
+        "delivered": false,
+        "state": "SUPPRESSED",
+        "reason": "OPTED_OUT_STOP_LEDGER",
+        "dryRun": true,
+        "messageSid": null,
+        "to": "+19405550999",
+        "from": "+17543342877"
+      },
+      "noConsentRes": {
+        "sent": false,
+        "delivered": false,
+        "state": "SUPPRESSED",
+        "reason": "NO_AFFIRMATIVE_CONSENT",
+        "dryRun": true,
+        "messageSid": null,
+        "to": "+19405550888",
+        "from": "+17543342877"
+      },
+      "quietHoursRes": {
+        "sent": false,
+        "delivered": false,
+        "state": "SUPPRESSED",
+        "reason": "QUIET_HOURS_BLOCK_OUTSIDE_0800_2000",
+        "localHour": 22,
+        "timezone": "America/Chicago",
+        "dryRun": true,
+        "messageSid": null,
+        "to": "+19405550777",
+        "from": "+17543342877"
+      }
+    },
+    {
+      "id": "GATE-5-TRANSFER-FAILURE-MATRIX",
+      "passed": true,
+      "busyTwiML": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n  <Say voice=\"Polly.Joanna-Neural\">Our on-call representative was unreachable (busy). Your callback number has been logged in our priority human callback queue for follow-up.</Say>\n  <Hangup/>\n</Response>",
+      "completedTwiML": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response/>"
+    },
+    {
+      "id": "GATE-10-PILOT-KILL-SWITCH-AUTH-AND-DIAL-BYPASS",
+      "passed": true,
+      "unauthStatusCode": 401,
+      "bypassTwiML": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n  <Say voice=\"Polly.Joanna-Neural\">Connecting you directly to our on-call team now.</Say>\n  <Dial timeout=\"20\" action=\"/voice/transfer-status\">+19723099156</Dial>\n</Response>"
+    }
+  ]
+}

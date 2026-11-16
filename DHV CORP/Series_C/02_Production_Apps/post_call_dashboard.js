@@ -146,6 +146,12 @@ function tokenMatches(expected, presented) {
  */
 function enrichDemoCallRecord(record, session = null) {
   if (!record || typeof record !== 'object') return record;
+  const sessionMode = String((session && (session.intakeMode || session.mode)) || (record && record.mode) || '').toLowerCase();
+  const isRealProductionIntake = (sessionMode === 'fnol' || sessionMode === 'intake' || (session && session.isProductionIntake === true)) && !(session && session.intakeMode === 'demo');
+  if (isRealProductionIntake && !(session && session.allowDemoEnrichment === true)) {
+    record.enrichmentSkippedReason = 'PRODUCTION_FNOL_STRICT_FACT_PRESERVATION';
+    return record;
+  }
   const UNCAPTURED = 'Not Provided — Pending Licensed Adjuster Verification';
   const isMissing = (val) => val === undefined || val === null || val === '' || val === 'N/A' || val === 'Unresolved' || val === 'Pending Verification' || val === 'Pending Report Number' || val === 'Valued Policyholder' || val === 'Prospect' || (typeof val === 'string' && (val.includes('Not Provided') || val.includes('Not captured') || val.includes('See damage narrative') || val.includes('N/A / Not reported')));
 

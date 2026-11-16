@@ -74,14 +74,14 @@ const L10N = {
     selector: `For English, press one or say English.`,
     greeting: `Hi{GREETING_NAME}, I'm AI Agent Angel{HEADER}, your 24/7 AI Claims Specialist. This call is recorded for quality, compliance, and instant First Notice of Loss documentation. I will capture your claim details end-to-end and generate your instant claim file. Before we begin, {PHONE_VALIDATION} with your <sub alias="lyve">live</sub> dashboard and photo upload link?`,
     qNarrative: `Hi{GREETING_NAME}, I'm AI Agent Angel{HEADER}. Before we begin, {PHONE_VALIDATION} with your <sub alias="lyve">live</sub> dashboard and photo upload link?`,
-    qNarrativeAbridged: `Hi{GREETING_NAME}, I'm AI Agent Angel{HEADER}. I have your pre-populated policy details ready so we can keep this demo fast. Tell me in your own words, what happened to your vehicle?`,
+    qNarrativeAbridged: `Hi{GREETING_NAME}, I'm AI Agent Angel{HEADER}. To save you from reading a 17-digit VIN on this demo, I've pre-loaded sample policy PA-8849201-NAT and a generic 2022 Acura MDX—or you can name your own vehicle—while we capture your full loss details, ACORD fields, and live Accident Scene Diagram from your description. Tell me in your own words, what happened to your vehicle?`,
     qNarrativeStoryOnly: `Thank you — I've just texted your <sub alias="lyve">live</sub> dashboard and photo upload link to your phone. Now tell me in your own words, starting about 10 seconds before the incident, what happened?`,
     qNarrativeStoryOnlyNoSms: `Understood. Now tell me in your own words, starting about 10 seconds before the incident, what happened?`,
     qNarrativeReopen: `Take your time — in a sentence or two, tell me what happened to your vehicle so I can ask the right questions.`,
     ackStory: `Thank you for walking me through that, and take your time — I'm so sorry you had to deal with this.`,
     ackSafe: `I'm so sorry you experienced that, but I'm relieved no one is injured. Take your time, I will help document what happened.`,
-    ackInjury: `I'm so sorry to hear that, and I hope you're okay. I've flagged your report for immediate priority medical triage. Please take your time, we will make sure you get the care and assistance you need.`,
-    ackPhotos: `I've noted photo evidence is available and I am texting the photo upload and <sub alias="lyve">live</sub> dashboard link to your cell phone right now.`,
+    ackInjury: `I'm so sorry to hear that, and I hope you're okay. If anyone needs immediate medical attention, please dial 911 right away; I have flagged your preliminary report so a bodily injury adjuster can review your file promptly.`,
+    ackPhotos: `I've just texted your single upload and <sub alias="lyve">live</sub> dashboard link to your cell phone so you can open it and snap or attach a photo whenever you're ready.`,
     ackPhotosNoSms: `I've noted photo evidence is available for your claim file.`,
     ackName: `Thank you, {NAME}.`,
     ackGot: `Thank you.`,
@@ -93,7 +93,7 @@ const L10N = {
     qWhereRoadside: `Where is the vehicle located right now?`,
     qWhereClarifyCity: `To help our adjusters locate the exact scene on a map — what city and state did this happen in?`,
     qWhereClarifyStreet: `What street or location did this happen on?`,
-    qPhotos: `Do you have photos of the damage or scene that you can upload using the link on your phone? For this demo, you can choose any photo from your phone or snap a picture of anything around you right now — even your desk or coffee cup — to see our real-time EXIF forensic audit in action.`,
+    qPhotos: `I've sent the single link to your phone — would you like to take a moment right now to open it and snap a quick test photo of anything nearby, like your desk or coffee cup, to see our real-time EXIF forensic verification on your ACORD file?`,
     qPhotosAskConsent: `Do you have photos of the damage or scene, and may I text the link to your cell phone right now so you can upload a photo or open your <sub alias="lyve">live</sub> dashboard?`,
     qPhotosMechanical: `Do you have photos of the dashboard warning lights, mechanical breakdown, or tow invoice that you can upload with the link on your phone?`,
     qPhotosFlood: `Do you have photos of the water level or flood scene that you can upload with the link on your phone?`,
@@ -189,7 +189,8 @@ const L10N = {
     ltFire: `fire`,
     ltFallingObject: `falling object / tree damage`,
     ltTowingRoadside: `towing and mechanical breakdown`,
-    closing: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF}. Please note this intake captures reported facts for carrier review and does not determine liability or coverage. Transferring you back to our demo host, Matthew.`,
+    closing: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF} for review by a licensed claims adjuster. Please note this intake captures reported facts as a preliminary record and does not determine liability or coverage.`,
+    closingDemo: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF}. Please note this intake captures reported facts for carrier review and does not determine liability or coverage. Transferring you back to our demo host, Matthew.`,
     sumLossType: `a {V} claim`,
     sumPolicy: `policy {V}`,
     sumLocation: `location at {V}`,
@@ -199,7 +200,7 @@ const L10N = {
     sumFlagged: `Some details could not be verified and will be confirmed by your adjuster.`,
     closePhotos: `I'm also texting you a link right now to send in photos of the damage — you can upload them any time.`,
     closeDashboard: `We're also texting you a private link to review this exact call on your <sub alias="lyve">live</sub> dashboard — including the full claim record, exact transcript, and 108-point AxiRate audit report.`,
-    wrap: `Demo Host Matthew here! Your Claim Call Summary Report, Interactive Scene Map, and 108-point AxiRate Audit are now <sub alias="lyve">live</sub> on your link, alongside sample audited calls from other loss types. Remember, Angel can complete any portion of the FNOL your carrier prefers and then execute a warm transfer to an associate to confirm the pre-populated data and issue the claim number — or overnight, hold the caller's place for first-in-line processing tomorrow morning. And beyond taking FNOL calls, Angel also audits 100 percent of your existing human employees' calls across 108 customizable factors. As an estimate, what percentage of your FNOL or Express Claim calls are currently audited?`,
+    wrap: `Demo Host Matthew here! Your Claim Call Summary Report, Interactive Scene Map, and 108-point AxiRate Audit are now <sub alias="lyve">live</sub> on your link, alongside sample audited calls from other loss types. Remember, Angel can complete any portion of the <sub alias="First Notice of Loss">FNOL</sub> your carrier prefers and then execute a warm transfer to an associate to confirm the pre-populated data and issue the claim number — or overnight, hold the caller's place for first-in-line processing tomorrow morning. And beyond taking <sub alias="First Notice of Loss">FNOL</sub> calls, Angel also audits 100 percent of your existing human employees' calls across 108 customizable factors. As an estimate, what percentage of your <sub alias="First Notice of Loss">FNOL</sub> or Express Claim calls are currently audited?`,
     smsPivotOffer: `I seem to be having trouble hearing that clearly over the line. No problem — I'm texting a secure link to your mobile phone right now so you can complete your report online, type details on screen, or upload photos directly. If it's easier, you can also continue in our webchat at ai agent angel dot com.`,
     smsRequestedPivot: `I am texting a secure link to your mobile phone right now. You can tap the link to complete your claim, type details on screen, and upload photos or police reports.`,
     humanRepPersuasion: `Of course — I am flagging your claim for immediate human adjuster escalation right now. While I connect your file to our live claims team, would you like me to note your callback details or continue capturing the preliminary facts so your adjuster has them on screen?`,
@@ -218,7 +219,7 @@ const L10N = {
     qNarrativeReopen: `Tómese su tiempo — en una o dos frases, cuénteme qué le ocurrió a su vehículo para hacerle las preguntas adecuadas.`,
     ackStory: `Gracias por contarme lo ocurrido, tómese su tiempo — lamento mucho que haya pasado por esto.`,
     ackSafe: `Lamento mucho lo ocurrido, pero me da alivio saber que no hay lesionados y que todos están bien. Tómese su tiempo, le ayudaré a documentar lo sucedido.`,
-    ackInjury: `Lamento mucho escuchar eso, y espero que se encuentre bien. He marcado su informe para una prioridad inmediata de triaje médico. Tómese su tiempo, nos aseguraremos de que reciba la atención necesaria.`,
+    ackInjury: `Lamento mucho escuchar eso, y espero que se encuentre bien. Si alguien requiere atención médica de emergencia, por favor llame al 911 de inmediato; he marcado su reporte preliminar para revisión prioritaria del ajustador.`,
     ackPhotos: `He registrado que hay evidencia fotográfica disponible y le estoy enviando el enlace de carga de fotos y su panel en vivo a su celular en este momento.`,
     ackPhotosNoSms: `He registrado que hay evidencia fotográfica disponible para su expediente.`,
     ackName: `Gracias, {NAME}.`,
@@ -323,7 +324,8 @@ const L10N = {
     ltFire: `incendio`,
     ltFallingObject: `objeto caído / daño por árbol`,
     ltTowingRoadside: `remolque y falla mecánica`,
-    closing: `Su reporte preliminar de siniestro para {SUMMARY} ha sido registrado bajo la referencia {REF}, y su Informe de Resumen de Llamada, Diagrama Interactivo del Lugar y auditoría AxiRate de 108 puntos ya están en vivo en su enlace. Tenga en cuenta que esta recepción registra los hechos reportados para revisión de la aseguradora y no determina responsabilidad ni cobertura. Le comunico nuevamente con nuestro presentador de demostración, Matthew.`,
+    closing: `Su reporte preliminar de siniestro para {SUMMARY} ha sido registrado bajo la referencia {REF} para revisión de un ajustador licenciado. Tenga en cuenta que esta recepción registra los hechos reportados como expediente preliminar y no determina responsabilidad ni cobertura.`,
+    closingDemo: `Su reporte preliminar de siniestro para {SUMMARY} ha sido registrado bajo la referencia {REF}. Tenga en cuenta que esta recepción registra los hechos reportados para revisión de la aseguradora y no determina responsabilidad ni cobertura. Le comunico nuevamente con nuestro presentador de demostración, Matthew.`,
     smsPivotOffer: `Parece que tengo dificultades para escucharle claramente por la línea. No hay problema — le estoy enviando un enlace seguro por mensaje de texto a su teléfono móvil para que pueda completar su reporte en línea o subir fotos directamente. Si te resulta más fácil, también puedes continuar en nuestro chat web en ai agent angel punto com.`,
     smsRequestedPivot: `¡Entendido! Le estoy enviando un enlace seguro por mensaje de texto a su teléfono móvil en este momento. Puede presionar el enlace para completar su reclamo y subir fotos o el reporte policial.`,
     humanRepPersuasion: `Por supuesto — estoy marcando su reclamo para escalamiento inmediato con un ajustador humano ahora mismo. Mientras conecto su expediente con nuestro equipo en vivo, ¿desea que tome los datos preliminares para que el ajustador los tenga en pantalla?`,
@@ -1965,10 +1967,23 @@ class ClaimsIntakeEngine {
       if (!data.additionalAdjusterNotes) data.additionalAdjusterNotes = text;
     }
     if (session.pendingSlot === 'photos' && text.length >= 2 && data.photoStatus !== 'UPLOADED_IN_CALL') {
-      data.photoStatus = (lower.includes('no') || lower.includes('none') || lower.includes("don't")) ? 'unavailable_at_time_of_call' : 'Caller indicated photos available — SIU upload link sent by text';
-      if (lower.includes('no') || lower.includes('none') || lower.includes("don't")) {
+      const isNoPhoto = /\b(no|none|nope|don't|do not|skip|pass|not right now|later)\b/i.test(lower);
+      const isAlreadyDoneOrReady = /\b(ready|got it|done|uploaded|took it|continue|go ahead|move on|next)\b/i.test(lower);
+      const isLiveTwilioCall = Boolean(/^CA[0-9a-f]{32}$/i.test(session.callSid || '') || session.livePhotoPauseEnabled === true);
+      if (isNoPhoto) {
+        data.photoStatus = 'unavailable_at_time_of_call';
         data.hasPhotos = false;
         data.photoSmsSent = false;
+        session.awaitingPhotoCapturePause = false;
+      } else if (session.awaitingPhotoCapturePause || isAlreadyDoneOrReady || !isLiveTwilioCall) {
+        data.photoStatus = 'Caller indicated photos available — SIU upload link sent by text';
+        data.hasPhotos = true;
+        session.awaitingPhotoCapturePause = false;
+      } else {
+        // First affirmative response on a live call: give the caller time to receive the link and snap a photo!
+        data.hasPhotos = true;
+        session.smsConsent = true;
+        session.awaitingPhotoCapturePause = true;
       }
     }
 
@@ -1992,13 +2007,11 @@ class ClaimsIntakeEngine {
       if (session.fnolData) {
         if (!session.fnolData.policyNumber) session.fnolData.policyNumber = 'PA-8849201-NAT';
         if (!session.fnolData.vehicleInfo) session.fnolData.vehicleInfo = '2022 Acura MDX';
-        session.fnolData.folInvestigated = true;
-        session.fnolData.trafficControlsCaptured = true;
       }
+      // Keep impactPoint, trafficControls, folInvestigate, otherParty, vehicleLocation, and towWhere
+      // so the live demo captures all ACORD 125/140 fields and Accident Scene Diagram details!
       const SECONDARY_DEMO_SKIP_SLOTS = new Set([
-        'otherPlate', 'otherParty', 'impactPoint', 'trafficControls',
-        'folInvestigate', 'floodWaterType', 'vehicleLocation', 'towWhere',
-        'animalProbe', 'carcassHazard', 'engineRestart'
+        'otherPlate', 'floodWaterType', 'animalProbe', 'carcassHazard', 'engineRestart'
       ]);
       flow = flow.filter(s => !SECONDARY_DEMO_SKIP_SLOTS.has(s));
     }
@@ -3040,6 +3053,13 @@ class ClaimsIntakeEngine {
           probeText = lang === 'es'
             ? `¿Podría describirme con un poco más de detalle qué partes del vehículo resultaron dañadas y cómo fue el golpe?`
             : `Could you describe in a little more detail what areas of your vehicle were damaged and how the impact happened?`;
+        } else if (answeringSlot === 'photos' && session.awaitingPhotoCapturePause) {
+          probeText = lang === 'es'
+            ? `Acabo de enviar ese enlace único a su teléfono — tómese un momento para abrirlo y tomar una foto rápida de prueba de cualquier objeto cercano, como su escritorio o taza de café, y solo diga "listo" cuando quiera que le lea su resumen.`
+            : `I've just sent that single link to your phone — take a moment to open it and snap a quick test photo of anything nearby, like your desk or coffee cup, and just say "ready" or "got it" whenever you're ready for me to read back your summary.`;
+          session.pendingSlot = 'photos';
+          session.transcript += '\nAI Agent Angel: ' + probeText;
+          return { speechChunks: [{ voice: 'agent', text: probeText }], isFinal: false, smsConsent: session.smsConsent, resendSms: true };
         } else {
           probeText = (SLOT_OPEN_REPROMPTS[answeringSlot] && SLOT_OPEN_REPROMPTS[answeringSlot][lang])
             || t(lang, session.lastQuestionKey || 'qNarrative');

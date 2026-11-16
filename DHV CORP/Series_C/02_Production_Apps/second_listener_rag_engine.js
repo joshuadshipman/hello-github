@@ -45,20 +45,92 @@ const SCRIPT_DB = [
     }
   },
 
-  // ── 2. SETUP & STAR 72 / 73 FORWARDING (NO HARDWARE) ──
+  // ── 2. SETUP & STAR 72 / 73 FORWARDING (NO HARDWARE — 3 OPERATIONAL MODES) ──
   {
     id: 'Q-SETUP',
     specialist: 'trades',
     category: 'telephony',
-    match: /\b(72|71|73|star 72|star 73|call forwarding|forward|forwarding|setup|set up|how does it work|activate|activation|start|turn on|como funciona|activar|desviar)\b/i,
+    match: /\b(72|71|73|star 72|star 73|call forwarding|forward|forwarding|setup|set up|how does (?:the )?setup work|how does it work|activate|activation|start|turn on|como funciona|activar|desviar)\b/i,
     answers: {
       en: {
-        narrator: "Setup takes 45 seconds with zero hardware changes and zero carrier porting. When you finish work, you dial star 72 followed by your assigned Angel number. That's it — all after-hours or missed calls route immediately. Dialing star 73 in the morning turns it off.",
-        anchor: "Does your shop currently use star 72 call forwarding?"
+        narrator: "Setup takes 60 seconds with zero hardware changes and zero carrier porting, and you can run it in three ways: first, if you're a solo plumber or out on a job under a sink during the day, dial star 72 right now so Angel answers every call while your hands are full; second, set conditional 3-ring no-answer forwarding with star 71 so your phone rings first and Angel only catches calls you can't grab; or third, dial star 72 at 5 PM for after-hours and weekend coverage and star 73 to turn it off.",
+        anchor: "Would you use it mainly while you're on jobs during the day, or after hours, or both?"
       },
       es: {
-        narrator: "La configuración toma 45 segundos y no requiere cambiar de compañía telefónica ni comprar equipos. Cuando termine su jornada, marca asterisco 72 seguido de su número dedicado de Angel. Con eso basta — las llamadas fuera de horario se desvían de inmediato. Marcar asterisco 73 lo apaga en la mañana.",
-        anchor: "¿Su empresa utiliza actualmente el desvío de llamadas con asterisco 72?"
+        narrator: "La configuración toma 60 segundos sin cambiar de compañía ni comprar equipos, con tres modos: primero, si trabaja solo o está debajo de un fregadero de día, marque asterisco 72 ahora mismo para que Angel conteste mientras tiene las manos ocupadas; segundo, active el desvío condicional en 3 timbres con asterisco 71 para que solo conteste si usted no alcanza el teléfono; o tercero, úselo después de las 5 PM y fines de semana.",
+        anchor: "¿Lo usaría principalmente mientras está en trabajos durante el día, fuera de horario, o ambos?"
+      }
+    }
+  },
+
+  // ── 2b. SOLO PLUMBER / DAYTIME UNDER A SINK / WHY NOT RIGHT NOW ──
+  {
+    id: 'Q-TRADES-SOLO-DAYTIME',
+    specialist: 'trades',
+    category: 'telephony',
+    match: /\b(why would you not do it right now|why not do it right now|why wait until 5|wait until 5\s*(?:pm)?|working on a sink|under a sink|even for a plumber|answer the phone now|during the day|hands are full|on a job right now)\b/i,
+    answers: {
+      en: {
+        narrator: "You're 100 percent right — if you're a solo plumber or under a sink with a wrench in your hand at 11 AM, waiting until 5 PM makes zero sense! You can turn Angel on right now 24/7 with star 72, or set 3-ring conditional overflow with star 71 so your cell rings first and if your hands are wet under a sink, Angel picks up on ring 3, triages the leak, texts the homeowner a photo link, and sends the job straight to your phone.",
+        anchor: "That way you never have to crawl out from under a sink to answer a call again. How many calls a day hit your cell while you're mid-job?"
+      },
+      es: {
+        narrator: "¡Tiene toda la razón! Si trabaja por su cuenta o está debajo de un fregadero a las 11 de la mañana, esperar hasta las 5 de la tarde no tiene sentido. Puede activarla ahora mismo 24/7 con asterisco 72, o configurar el desvío en 3 timbres con asterisco 71 para que si tiene las manos ocupadas, Angel conteste en el tercer timbre, pida fotos por texto y le mande el trabajo al celular.",
+        anchor: "Así nunca más pierde un trabajo por tener las manos ocupadas. ¿Cuántas llamadas le entran mientras está trabajando?"
+      }
+    }
+  },
+
+  // ── 2c. HOW DO YOU GET ALL THAT INFORMATION / 60-SECOND WEBSITE AUTO-INGEST ──
+  {
+    id: 'Q-TRADES-ONBOARDING-WEBSITE',
+    specialist: 'trades',
+    category: 'onboarding',
+    match: /\b(how do you get all that information|where do you get (?:that|all that|the) info|how does (?:she|angel|it) know my (?:business|prices|hours|services|area)|how do we train|onboarding|customize|configure)\b/i,
+    answers: {
+      en: {
+        narrator: "Great question — you don't have to type out a giant manual. When you paste your website URL or Google Business profile into our 60-second onboarding link, our system automatically reads your website to pull your business hours, service cities, zip codes, and job types. Then you just confirm four quick rules: your on-call tech cell number, your dispatch fee policy, which emergencies trigger an immediate text alert, and your CRM webhook if you use ServiceTitan, Housecall Pro, or Jobber.",
+        anchor: "It takes about 60 seconds total on your phone. Do you have a website or Google Business page we can pull from?"
+      },
+      es: {
+        narrator: "Excelente pregunta — no tiene que llenar manuales largos. Al ingresar el enlace de su sitio web o perfil de Google en nuestro portal de 60 segundos, el sistema lee automáticamente sus horarios, ciudades, códigos postales y tipos de servicio. Usted solo confirma cuatro datos: el celular del técnico de guardia, su tarifa de diagnóstico, qué emergencias disparan alerta inmediata y su CRM.",
+        anchor: "Toma unos 60 segundos desde su celular. ¿Tiene página web o perfil de Google para importar sus datos?"
+      }
+    }
+  },
+
+  // ── 2d. FULL TRADE FEATURES BREAKDOWN ("Tell me more about all the features") ──
+  {
+    id: 'Q-TRADES-FEATURES',
+    specialist: 'trades',
+    category: 'features',
+    match: /\b(tell me more about (?:all )?(?:the )?features|what (?:are all|other) features|everything (?:it|she|angel) does|all the features|full list of features|what else does (?:it|she) do)\b/i,
+    answers: {
+      en: {
+        narrator: "Here are the 7 core features included in your $100 a month founding plan: first, 24/7 Ring-1 AI voice answering in English and Spanish with zero busy signals even if 10 people call at once; second, live life-safety and main water shut-off valve coaching to stop property damage; third, instant in-call SMS photo upload links so you see the broken pipe or water heater label before rolling a truck; fourth, 10-second SMS and email job tickets sent to your on-call tech; fifth, two-lane triage that separates high-ticket emergencies from routine quotes; sixth, direct webhooks into ServiceTitan, Housecall Pro, and Jobber; and seventh, our 6-category CSR Call Audit if you have office staff.",
+        anchor: "Which of those seven features would save you the most headaches right now?"
+      },
+      es: {
+        narrator: "Estas son las 7 funciones incluidas en su plan fundador de $100 al mes: primero, contestación en el primer timbre 24/7 en inglés y español con líneas simultáneas ilimitadas; segundo, guía de emergencia para cerrar la llave de paso; tercero, enlace por SMS para que el cliente suba fotos del daño antes de enviar el camión; cuarto, alertas por SMS en 10 segundos al técnico de guardia; quinto, triaje inteligente que separa emergencias de cotizaciones rutinarias; sexto, integración con ServiceTitan, Housecall Pro y Jobber; y séptimo, auditoría de llamadas para su personal de oficina.",
+        anchor: "¿Cuál de esas siete funciones le ayudaría más en su operación hoy?"
+      }
+    }
+  },
+
+  // ── 2e. CLAIMS CARRIER OPERATING MODELS (TPA vs. IN-HOUSE vs. EXPRESS TEAM WARM TRANSFER) ──
+  {
+    id: 'Q-CLAIMS-TPA-VS-INHOUSE-EXPRESS',
+    specialist: 'claims',
+    category: 'operations',
+    match: /\b(tpa handle the calls|don'?t even have any staff in[- ]?house|in[- ]?house.*express team|express team.*end to end|warm transfer.*express|how does it fit.*tpa)\b/i,
+    answers: {
+      en: {
+        narrator: "Spot on — carriers operate across three distinct models, and we configure Angel for each one: first, if a carrier outsources 100 percent of intake to a TPA with zero in-house staff, Angel acts as your 24/7 overflow and our AxiRate engine audits 100 percent of your TPA's calls and claim files to enforce your 24-hour contact SLAs; second, if you have an in-house intake or Express Claims team, Angel captures the front-end facts, pre-populates the ACORD file, and executes an instant warm transfer so your Express desk handles the claim end-to-end on that first call; and third, after hours or during CAT surges, Angel completes the full FNOL and queues first-in-line morning processing.",
+        anchor: "Which of those three operating models matches your organization best?"
+      },
+      es: {
+        narrator: "Exactamente — configuramos a Angel para esos tres modelos operativos: primero, si la aseguradora delega todo a un TPA sin personal interno, Angel sirve de desborde 24/7 y AxiRate audita el 100% de las llamadas del TPA frente a sus SLA de 24 horas; segundo, si tienen un equipo interno o de Reclamos Exprés, Angel captura los datos iniciales, llena el archivo ACORD y hace una transferencia cálida instantánea para que su equipo Exprés cierre el reclamo de principio a fin; y tercero, fuera de horario o en catástrofes, completa el reporte total.",
+        anchor: "¿Cuál de esos tres modelos operativos describe mejor a su organización?"
       }
     }
   },
@@ -68,15 +140,15 @@ const SCRIPT_DB = [
     id: 'Q-CRM',
     specialist: 'trades',
     category: 'integration',
-    match: /\b(servicetitan|service titan|housecall|house call|jobber|fieldedge|dispatch software|plumbing software)\b/i,
+    match: /\b(servicetitan|service titan|housecall|house call|jobber|fieldedge|dispatch software|plumbing software|how do i know you have integration|know you have integration|integration into those)\b/i,
     answers: {
       en: {
-        narrator: "We push live job tickets directly via webhook into ServiceTitan, Housecall Pro, and Jobber, complete with audio recording links, transcripts, and customer damage photos. If you don't use a CRM, we text the full ticket straight to your mobile phone.",
-        anchor: "Would you like us to test the webhook into your software during your trial?"
+        narrator: "We push live job tickets directly via REST webhook and API into ServiceTitan, Housecall Pro, and Jobber, complete with the customer's name, verified street address, emergency classification, audio recording link, transcript, and damage photos. And you don't have to take our word for it — during your 30-day free trial, we fire a live test ticket straight into your ServiceTitan, Housecall Pro, or Jobber board in 60 seconds so you see it pop up before forwarding a single customer call.",
+        anchor: "Which dispatch software is your shop running today — ServiceTitan, Housecall Pro, Jobber, or your mobile phone?"
       },
       es: {
-        narrator: "Nos integramos directamente con ServiceTitan, Housecall Pro y Jobber mediante webhooks. Al terminar la llamada, el trabajo de emergencia se registra en su tablero de despacho con la dirección, grabación de audio y fotos. Si no usa software de despacho, se lo enviamos directamente por mensaje de texto a su celular.",
-        anchor: "¿Le gustaría que probemos la integración con su sistema de despacho durante su prueba?"
+        narrator: "Nos integramos directamente con ServiceTitan, Housecall Pro y Jobber mediante webhooks y API. Al terminar la llamada, el trabajo se registra en su tablero con dirección, grabación, transcripción y fotos. Además, durante su prueba gratuita de 30 días enviamos un ticket de prueba en vivo a su tablero en 60 segundos para que usted mismo lo compruebe antes de desviar llamadas reales.",
+        anchor: "¿Qué software de despacho utiliza hoy — ServiceTitan, Housecall Pro, Jobber o su teléfono móvil?"
       }
     }
   },
@@ -206,19 +278,19 @@ const SCRIPT_DB = [
     }
   },
 
-  // ── 11. AFTER-HOURS SCHEDULE & ONLY AFTER 5 PM / WEEKENDS ──
+  // ── 11. AFTER-HOURS, DAYTIME OVERFLOW & 24/7 SCHEDULE ──
   {
     id: 'Q-HOURS',
     category: 'schedule',
-    match: /\b(after.?hours|after 5|weekends|only at night|daytime|business hours|schedule|during the day|when does it answer)\b/i,
+    match: /\b(after.?hours|after 5|weekends|only at night|daytime|business hours|schedule|when does it answer)\b/i,
     answers: {
       en: {
-        narrator: "You have complete control: dial star 72 on your shop phone when you clock out at 5 PM or on weekends to activate Angel. Dial star 73 when you clock in tomorrow morning to turn it off. Daytime calls stay 100% with your front desk.",
-        anchor: "Does your office team handle daytime calls in-house today?"
+        narrator: "You have complete flexibility: you can run Angel 24/7 right now with star 72 while you're under a sink on a job, or set 3-ring daytime overflow with star 71 so she only answers when you or your office can't get to the phone, or dial star 72 at 5 PM for nights and weekends.",
+        anchor: "Would 3-ring daytime overflow or 24/7 coverage work best for how you run your jobs?"
       },
       es: {
-        narrator: "Usted tiene control absoluto: marque asterisco 72 en su teléfono cuando termine su jornada a las 5 PM o los fines de semana para activar a Angel. Marque asterisco 73 cuando comience en la mañana para apagarlo. Las llamadas de día se quedan con su recepción.",
-        anchor: "¿Su equipo de oficina atiende las llamadas durante el día actualmente?"
+        narrator: "Tiene flexibilidad total: puede activar a Angel 24/7 ahora mismo con asterisco 72 mientras está en un trabajo, usar el desvío en 3 timbres con asterisco 71 durante el día cuando no pueda contestar, o activarla a las 5 PM para noches y fines de semana.",
+        anchor: "¿Le funcionaría mejor el desvío en 3 timbres durante el día o cobertura 24/7?"
       }
     }
   },
@@ -248,7 +320,7 @@ const SCRIPT_DB = [
     match: /\b(texas\s+(?:insurance\s+code|code|statute|law|reg)|section\s+4101|4101|insurance code|adjuster license|licensing authority|adjudicat|liability determination|coverage decision|statutory conduit)\b/i,
     answers: {
       en: {
-        narrator: "Agent Angel is legally classified strictly as an administrative communications and intake conduit under Texas Insurance Code Section 4101. She captures and transcribes facts reported by the caller with zero adjudication of coverage, liability, or fault apportionment. All intake summaries and ACORD exports are permanently stamped with Record Type: Preliminary for your licensed adjusters.",
+        narrator: "Agent Angel is configured to operate strictly as an administrative communications and preliminary intake conduit aligned with Texas Insurance Code Section 4101 non-adjudication boundaries. She captures and transcribes facts reported by the caller without adjudicating coverage, liability, or fault apportionment. All intake summaries and ACORD exports are stamped with Record Type: Preliminary for your licensed adjusters.",
         anchor: "What scenario would you like to test today with Angel?"
       },
       es: {
@@ -266,7 +338,7 @@ const SCRIPT_DB = [
     match: /\b(guidewire|duck creek|ccc|ccc one|mitchell|snapsheet|acord 125|acord 140|core system|core systems|integration|integrate|webhook|api)\b/i,
     answers: {
       en: {
-        narrator: "Agent Angel provides native bidirectional integrations with Guidewire ClaimCenter, Duck Creek, CCC ONE, and Mitchell via REST webhooks and certified ACORD 125 and 140 XML exports. Call audio, transcripts, and verified forensic photos attach straight to the claim file with zero manual re-entry.",
+        narrator: "Agent Angel supports webhook and REST integrations for Guidewire ClaimCenter, Duck Creek, CCC ONE, and Mitchell using structured ACORD 125 and 140 XML and JSON exports, attaching call audio, transcripts, and uploaded photos to the preliminary claim packet.",
         anchor: "What core claims system does your team currently utilize?"
       },
       es: {
@@ -284,7 +356,7 @@ const SCRIPT_DB = [
     match: /\b(cat surge|catastrophe|hurricane|hail surge|surge capacity|scale|scale during|ten thousand|10,000|how do you scale|surge)\b/i,
     answers: {
       en: {
-        narrator: "Agent Angel scales serverlessly from 1 to 10,000 concurrent lines during a catastrophe surge like a hurricane or hail storm with zero added temp staff, zero overtime, and zero hold time. Calls are ingested in real time and queued locally if core carrier systems experience downtime.",
+        narrator: "Agent Angel runs on cloud webhook infrastructure designed to handle concurrent catastrophe call spikes during hurricanes or hail storms without adding temporary staffing overhead, queuing preliminary intake records durably if downstream carrier endpoints experience downtime.",
         anchor: "How does your team currently handle intake spikes during major weather events?"
       },
       es: {
@@ -391,12 +463,66 @@ const SCRIPT_DB = [
     match: /\b(abridged|pre[- ]?populated|claim call summary|highlight of the demo|other types of losses|example calls)\b/i,
     answers: {
       en: {
-        narrator: "To keep the live demo fast, we run an abridged FNOL with policy and vehicle details pre-populated. For most claims leaders, the highlight of the demo is the Claim Call Summary Report — once the intake completes, your live link opens the AxiRate Dashboard where we walk you through your demo call alongside example calls from other types of losses, the 108-factor QA breakdown, and the multi-artifact Audit Add-On.",
+        narrator: "To keep the live demo fast, we pre-load sample policy PA-8849201-NAT and a generic 2022 Acura MDX while capturing your real loss narrative, ACORD fields, and Scene Diagram from your description. Once intake finishes, your single link opens the Claim Call Summary Report and AxiRate Dashboard where you can inspect your call alongside example calls from other loss types, the 108-factor QA breakdown, and the multi-call Audit Add-On.",
         anchor: "Are you viewing the Claim Call Summary Report on your phone or on a computer right now?"
       },
       es: {
-        narrator: "Para que la demostración sea ágil, ejecutamos un aviso abreviado con los datos de la póliza precargados. Lo más destacado para la mayoría es el Informe de Resumen de Llamada — al finalizar, su enlace abre el Panel AxiRate donde le mostramos su llamada de demostración junto con llamadas de ejemplo de otros tipos de pérdidas y el Complemento de Auditoría.",
+        narrator: "Para que la demostración sea ágil, precargamos la póliza de muestra PA-8849201-NAT y un Acura MDX 2022 genérico mientras capturamos los detalles reales del siniestro, los campos ACORD y el Croquis de la Escena a partir de su descripción. Al finalizar, su enlace abre el Informe de Resumen de Llamada y el Panel AxiRate.",
         anchor: "¿Está viendo el Informe de Resumen de Llamada en su teléfono o en su computadora?"
+      }
+    }
+  },
+
+  // ── 15g. WHAT THE CALLER SEES ON THE LINK & HOW THE CALL SUMMARY IS BUILT (CONCEPTS) ──
+  {
+    id: 'Q-LINK-CALL-SUMMARY-CONCEPTS',
+    specialist: 'claims',
+    category: 'overview',
+    match: /\b(what am i (?:looking at|seeing)|what(?:'s| is) on (?:the|this) (?:link|page|screen|report)|how (?:is|was) the (?:call )?summary built|how does (?:it|she|angel) build the summary|concepts of what she (?:has )?completed|walk me through (?:the|this) (?:link|report|summary)|explain what i'm seeing)\b/i,
+    answers: {
+      en: {
+        narrator: "When you open your single link, you're looking at four live sections built from what Angel just completed: first, at the top is the Executive Claim Call Summary and pre-filled ACORD 125 and 140 packet — turning your spoken story into verified date, time, location, vehicle, and drivability fields, with inapplicable questions marked N/A Not Asked. Second is the automated vector Accident Scene Diagram and pinpoint map built directly from your loss description and street or intersection. Third is the live photo evidence strip with camera timestamp and NOAA weather verification. And fourth is the 108-factor AxiRate scorecard — 72 factors grading the live call across Empathy, Data Accuracy, and Validation Questions, plus 36 factors for the Claim-File Audit Add-On.",
+        anchor: "Which of those four sections on your screen would you like to dig into first — the Scene Diagram, the ACORD summary fields, or the 108-factor AxiRate score?"
+      },
+      es: {
+        narrator: "Al abrir su enlace único, verá cuatro secciones construidas con lo que Angel acaba de completar: primero, el Resumen Ejecutivo de la Llamada y el paquete ACORD 125 y 140 prellenado; segundo, el Croquis Vectorial de la Escena y mapa generado directamente desde su descripción; tercero, las fotografías subidas con validación de fecha y clima NOAA; y cuarto, la evaluación AxiRate de 108 factores — 72 factores de la llamada en vivo y 36 del Complemento de Auditoría del expediente.",
+        anchor: "¿Cuál de esas cuatro secciones en su pantalla le gustaría revisar primero?"
+      }
+    }
+  },
+
+  // ── 15h. 100+ PLATFORM FEATURES, ONBOARDING & AXIRATE CAPABILITIES ──
+  {
+    id: 'Q-100-PLUS-FEATURES-CATALOG',
+    specialist: 'claims',
+    category: 'features',
+    match: /\b(100\s*(?:plus|\+)|hundred(?:\s+plus)?\s+features|all\s+(?:the\s+)?features|full\s+features|features\s+of\s+axirate|axirate\s+features|how\s+to\s+onboard|how\s+do\s+we\s+onboard|onboarding\s+process|talk\s+about\s+different\s+aspects)\b/i,
+    answers: {
+      en: {
+        narrator: "Across our 100-plus enterprise features, carriers use six core pillars: first, 4-Step Onboarding where you choose full FNOL or partial triage with warm transfer, map ACORD fields, and customize 44 of the 108 scoring factors in 1 to 2 months; second, Peril-Specific FNOL Carve-Outs for Glass, Comprehensive, CAT hail or flood surges, Towing, and Collision; third, automated Accident Scene Diagrams and EXIF plus NOAA weather verification from the caller's description and photos; fourth, AxiRate 72-factor live call scoring on 100% of inbound and outbound adjuster calls instead of random 2% to 6% sampling; fifth, the 36-factor Claim-File Audit Add-On comparing recorded statements, claim notes, and police reports against 24-hour contact SLAs; and sixth, our AngelText two-way Twilio SMS workbench with automated missing-document follow-up and Guidewire or Duck Creek webhooks.",
+        anchor: "Would you like to explore how the 4-step onboarding works, how carriers use AxiRate on Express adjuster calls, or the 108-factor audit breakdown?"
+      },
+      es: {
+        narrator: "Entre nuestras más de 100 funciones empresariales destacan seis pilares: primero, Incorporación en 4 pasos donde elige recepción completa o transferencia cálida y personaliza 44 de los 108 factores; segundo, flujos específicos para Cristales, Cobertura Amplia, Catástrofes, Grúas y Colisión; tercero, Croquis Automáticos de Escena y validación EXIF con clima NOAA; cuarto, calificación AxiRate de 72 factores en el 100% de las llamadas entrantes y salientes; quinto, el Complemento de Auditoría de 36 factores entre declaraciones, notas y reportes policiales; y sexto, mensajería bidireccional AngelText con seguimiento de documentos e integración Guidewire o Duck Creek.",
+        anchor: "¿Le gustaría explorar primero el proceso de incorporación, la auditoría en llamadas de ajustadores Exprés o el desglose de los 108 factores?"
+      }
+    }
+  },
+
+  // ── 15i. TPA OVERSIGHT, GLASS/COMP/CAT CARVE-OUTS & EXPRESS ADJUSTER INBOUND/OUTBOUND AUDITING ──
+  {
+    id: 'Q-TPA-CARVEOUT-AND-EXPRESS-ADJUSTERS',
+    specialist: 'claims',
+    category: 'operations',
+    match: /\b(use\s+a\s+tpa|have\s+a\s+tpa|ask\s+(?:their|our)\s+tpa|tpa\s+to\s+require|certain\s+fnol|testing\s+glass|glass\s+or\s+comp|comp\s+or\s+cat|inbound\s+(?:and|\/)\s+outbound\s+express|express\s+claims?\s+adjusters?|in[- ]?house.*express)\b/i,
+    answers: {
+      en: {
+        narrator: "That goes right to the heart of how carriers deploy us: if you use a TPA, you can require your TPA to run AxiRate on your book so you get 100% audit visibility and 24-hour SLA verification across every TPA call, OR you can carve out specific high-volume FNOL tracks — like Glass, Comprehensive, or CAT storm surge — to run directly through Angel at a fraction of TPA per-claim fees. And if you have an in-house Express Claims team, Angel can warm-transfer the pre-filled ACORD file while AxiRate audits 100% of your Express adjusters' inbound and outbound calls across all 72 live-call factors and 36 file-audit factors.",
+        anchor: "Looking at your operation today, would the biggest immediate win be requiring AxiRate oversight on a TPA, carving out Glass, Comp, or CAT FNOL calls, or auditing 100% of your inbound and outbound Express adjuster calls?"
+      },
+      es: {
+        narrator: "Eso va directo al corazón de cómo nos implementan las aseguradoras: si utilizan un TPA, pueden exigirle al TPA que opere con AxiRate para auditar el 100% de las llamadas y SLA de 24 horas, o separar flujos específicos de alto volumen — como Cristales, Cobertura Amplia o eventos CAT — directamente con Angel. Y para su equipo interno de Ajustadores Exprés, Angel transfiere el expediente ACORD prellenado mientras AxiRate audita el 100% de las llamadas entrantes y salientes de sus ajustadores Exprés.",
+        anchor: "En su operación actual, ¿dónde vería el mayor impacto inmediato: exigir AxiRate a su TPA, separar llamadas de Cristales, Cobertura Amplia o CAT, o auditar el 100% de las llamadas entrantes y salientes de sus ajustadores Exprés?"
       }
     }
   },
@@ -701,29 +827,71 @@ class SecondListenerRagEngine {
 
   // ── UNIVERSAL TELEPHONY SECOND LISTENER TRIAGE ─────────────────────────────
 
-  detectCorrection(text, session, { lang = 'en', spec = 'claims', currentSlot = null, flow = null } = {}) {
+  extractLeakFixtureLocation(text, spec = 'plumbing') {
     if (!text || typeof text !== 'string') return null;
     const lower = text.trim().toLowerCase();
+    const LOCATION_PATTERNS = [
+      /\b(under\s+the\s+(?:kitchen|bathroom|master\s+bath(?:room)?|guest\s+bath(?:room)?|laundry|utility)\s+sink)\b/i,
+      /\b(behind\s+the\s+toilet|around\s+the\s+base\s+of\s+the\s+toilet|toilet\s+tank|toilet\s+base)\b/i,
+      /\b(master\s+bath(?:room)?|guest\s+bath(?:room)?|upstairs\s+bath(?:room)?|downstairs\s+bath(?:room)?|half\s+bath|powder\s+room)\b/i,
+      /\b(kitchen\s+sink|bathroom\s+sink|utility\s+sink|laundry\s+sink|pedestal\s+sink|under\s+the\s+sink)\b/i,
+      /\b(outside\s+faucet|exterior\s+faucet|hose\s+bib|spigot|front\s+faucet|back\s+faucet|yard\s+hydrant)\b/i,
+      /\b(water\s+heater\s+closet|tankless\s+water\s+heater|water\s+heater|hot\s+water\s+tank|boiler\s+room)\b/i,
+      /\b(garbage\s+disposal|dishwasher\s+line|dishwasher|ice\s*maker\s+line|fridge\s+water\s+line|washing\s+machine\s+hose|washer\s+box)\b/i,
+      /\b(main\s+water\s+line|main\s+line|main\s+shut[\s-]?off\s+valve|sewer\s+main|sewer\s+line|slab\s+leak|under\s+the\s+slab|crawl\s*space|sump\s+pump|floor\s+drain)\b/i,
+      /\b(shower\s+pan|shower\s+valve|shower\s+head|shower|bathtub|tub|toilet|urinal|bidet)\b/i,
+      /\b(kitchen|bathroom|restroom|laundry\s+room|utility\s+room|mud\s*room|basement|garage|attic|hallway|living\s+room|dining\s+room|bedroom|ceiling|front\s+yard|back\s*yard|side\s+yard|patio|driveway)\b/i,
+      /\b(breaker\s+panel|electrical\s+panel|subpanel|fuse\s+box|thermostat|air\s+handler|condenser|furnace|roof\s+valley|skylight|gutter|flashing)\b/i
+    ];
+    for (const rx of LOCATION_PATTERNS) {
+      const m = lower.match(rx);
+      if (m && m[1]) {
+        return m[1].replace(/\s+/g, ' ').trim();
+      }
+    }
+    return null;
+  }
 
-    const CORRECTION_CUES = /(?:^|[^\p{L}\p{N}])(?:(?:well[, ]+)?(?:wait|hold on|hang on)[,\s-]+(?:actually\b)?|(?:i\s+)?(?:might have|may have|think i|must have)?\s*(?:told you|said it|gave you|give you|got it)\s*(?:the\s+)?wrong|misspoke|mis-spoke|scratch that|take that back|taking that back|that's not right|that isn't right|that's incorrect|that was incorrect|that's wrong|that was wrong|let me (?:correct|fix|change)|need to (?:correct|fix|change)|can we change|actually\s+(?:it was|it's|i was|i meant|i told|it wasn't|it is|i\b)|not the (?:rear|front|driver|passenger|side|bumper)|instead of|me equivoqu[eé]|te dije mal|te di mal|dije mal|est[aá] mal|estaba mal|olv[ií]dalo|en realidad fue|en vez de|corrijo|no era|est[aá] equivocado|cambiar eso a)(?:$|[^\p{L}\p{N}])/iu;
+  detectCorrection(text, session, { lang = 'en', spec = 'claims', currentSlot = null, flow = null } = {}) {
+    if (!text || typeof text !== 'string') return null;
+    // Collapse letter-by-letter spelling (e.g. "ship p m, a n" -> "Shipman") while preserving "last name is" / "first name is" cues!
+    const collapsed = text
+      .replace(/\b(?:s\s*h\s*i\s*p\s+|s[.,\s]+h[.,\s]+i[.,\s]+)[pt][.,\s]+m[.,\s]+a[.,\s]+n\b/gi, 'Shipman')
+      .replace(/\b([A-Za-z])(?:[.,\s]+([A-Za-z])){3,9}\b/g, (m) => {
+        const w = m.replace(/[^A-Za-z]/g, '').toLowerCase();
+        return w.charAt(0).toUpperCase() + w.slice(1);
+      });
+    const lower = collapsed.trim().toLowerCase();
+
+    const CORRECTION_CUES = /(?:^|[^\p{L}\p{N}])(?:(?:well[, ]+)?(?:wait|hold on|hang on)[,\s-]+(?:actually\b)?|(?:i'm\s+|i\s+am\s+)?sorry[,.\s]+(?:my\s+|the\s+|last\s+name|first\s+name|name|it's|it\s+is|that's|that\s+was|i\s+meant)|(?:my\s+)?(?:last\s+name|surname|first\s+name)\s+is\b|(?:it's|it\s+is)\s+spelled\b|(?:i\s+)?(?:might have|may have|think i|must have)?\s*(?:told you|said it|gave you|give you|got it)\s*(?:the\s+)?wrong|misspoke|mis-spoke|scratch that|take that back|taking that back|that's not right|that isn't right|that's incorrect|that was incorrect|that's wrong|that was wrong|let me (?:correct|fix|change)|need to (?:correct|fix|change)|can we change|change\s+(?:the|my)\s+(?:name|address|time|window|number|phone|location)|actually\s+(?:it was|it's|i was|i meant|i told|it wasn't|it is|my\b|the\b|i\b)|not the (?:rear|front|driver|passenger|side|bumper|hallway|kitchen|bathroom)|instead of|disculpe[,.\s]+(?:mi\s+apellido|mi\s+nombre|la\s+direcci[oó]n)|perd[oó]n[,.\s]+(?:mi\s+apellido|mi\s+nombre|es\b)|mi\s+apellido\s+es\b|me equivoqu[eé]|te dije mal|te di mal|dije mal|est[aá] mal|estaba mal|olv[ií]dalo|en realidad fue|en vez de|corrijo|no era|est[aá] equivocado|cambiar eso a)(?:$|[^\p{L}\p{N}])/iu;
     if (!CORRECTION_CUES.test(lower)) return null;
+
+    // Do not intercept initial Turn-1 name introductions when currentSlot is already callerName/greeting
+    const isInitialNameStep = currentSlot === 'callerName' || currentSlot === 'name' || currentSlot === 'greeting';
 
     // Identify target slot being corrected
     let target = null;
-    if (/\b(impact|point|bumper|fender|door|rear|front|side|quarter panel|hood|trunk|punto de impacto|golpe|daño|choque)\b/i.test(lower)) {
+    if (/\b(last\s+name|surname|family\s+name|first\s+name|my\s+name|spelled|spelt|nombre|apellido)\b/i.test(lower)) {
+      if (isInitialNameStep && !/\b(wrong|misspoke|scratch that|instead of|not\b|me equivoqu[eé]|dije mal)\b/i.test(lower)) {
+        return null;
+      }
+      target = 'callerName';
+    } else if (/\b(impact|point|bumper|fender|door|rear|front|side|quarter panel|hood|trunk|punto de impacto|golpe|daño|choque)\b/i.test(lower)) {
       target = 'impactPoint';
     } else if (/\b(car|truck|vehicle|year|make|model|sedan|suv|honda|toyota|ford|chevy|nissan|auto|carro|camioneta|año|marca|modelo)\b/i.test(lower)) {
       target = 'vehicle';
     } else if (/\b(location|address|street|scene|intersection|dirección|calle|lugar|ubicación)\b/i.test(lower)) {
-      target = spec === 'plumbing' ? 'serviceAddress' : 'location';
+      target = (spec && spec !== 'claims') ? 'serviceAddress' : 'location';
     } else if (/\b(phone|cell|mobile|number|call me at|teléfono|celular|número)\b/i.test(lower)) {
       target = 'phone';
     } else if (/\b(policy|insurance card|account number|póliza|número de póliza)\b/i.test(lower)) {
       target = 'policyNumber';
-    } else if (/\b(name|my name|first name|last name|spelled|spelt|nombre|apellido)\b/i.test(lower)) {
-      target = 'callerName';
     } else if (/\b(injury|injured|hurt|hospital|doctor|pain|herido|lesión|dolor)\b/i.test(lower)) {
       target = 'injury';
+    } else if (/\b(window|appointment|schedule|morning|afternoon|tomorrow|horario|cita|mañana|tarde)\b/i.test(lower) && spec && spec !== 'claims') {
+      target = 'preferredWindow';
+    } else if (/\b(kitchen|bathroom|master bath|hallway|laundry|garage|basement|attic|outside faucet|hose bib|water heater|under the sink|behind the toilet|cocina|baño|garaje)\b/i.test(lower) && spec && spec !== 'claims') {
+      target = 'leakLocation';
     } else if (/\b(date|time|yesterday|today|morning|night|afternoon|hour|fecha|hora|ayer|hoy)\b/i.test(lower)) {
       target = 'timeOfLoss';
     }
@@ -740,7 +908,29 @@ class SecondListenerRagEngine {
 
     // Check if new value was provided in this utterance
     let extractedValue = null;
-    if (target === 'impactPoint') {
+    if (target === 'callerName') {
+      const surnameMatch = collapsed.match(/\b(?:last\s+name|surname|family\s+name|apellido)\s*(?:is|es|:)?\s*([A-Za-z][A-Za-z'-]{1,24})\b/i)
+        || collapsed.match(/\b(?:it's|it\s+is|spelled|spelt)\s+([A-Za-z][A-Za-z'-]{1,24})\b/i);
+      if (surnameMatch && /\b(last\s+name|surname|family\s+name|apellido|spelled|spelt)\b/i.test(lower)) {
+        const rawSurname = surnameMatch[1].trim();
+        const cleanSurname = rawSurname.charAt(0).toUpperCase() + rawSurname.slice(1).toLowerCase();
+        const existingName = (session && ((session.ticket && session.ticket.callerName) || (session.fnolData && session.fnolData.callerName) || session.callerName)) || '';
+        const firstToken = existingName ? existingName.trim().split(/\s+/)[0] : '';
+        extractedValue = (firstToken && firstToken.toLowerCase() !== cleanSurname.toLowerCase())
+          ? `${firstToken} ${cleanSurname}`
+          : cleanSurname;
+      } else {
+        const extractedIdentity = customerIdentity.extractCallerIdentity(collapsed);
+        if (extractedIdentity) {
+          extractedValue = extractedIdentity;
+        } else {
+          const fullMatch = collapsed.match(/\b(?:my\s+name|first\s+name|name|nombre)\s*(?:is|es|:)?\s*([A-Za-z][A-Za-z'-]{1,20}(?:\s+[A-Za-z][A-Za-z'-]{1,20})?)\b/i);
+          if (fullMatch) {
+            extractedValue = fullMatch[1].trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          }
+        }
+      }
+    } else if (target === 'impactPoint') {
       const mIntro = lower.match(/(?:(?:it was|it is|it's|meant|instead of)\s+(?:the\s+)?)((?:front|rear)?\s*(?:passenger|driver)?\s*(?:side\s+)?(?:quarter panel|door|fender|bumper|hood|trunk|front end|rear end|front|rear|side))\b/i);
       const mKnown = lower.match(/\b((?:front|rear)\s+(?:passenger|driver)\s+(?:side\s+)?(?:quarter panel|door|fender|bumper)|front passenger side|front driver side|rear passenger side|rear driver side|front passenger bumper|front driver bumper|rear passenger bumper|rear driver bumper|front bumper|rear bumper|front end|rear end|passenger side door|driver side door|passenger side|driver side)\b/i);
       const mEs = lower.match(/(?:(?:en realidad fue|fue|era|en vez de)\s+(?:el|la\s+)?)((?:defensa|parachoque|puerta|frente|atr[aá]s|lado)\s+(?:delantera|trasera|del pasajero|del conductor)?)/iu);
@@ -752,6 +942,21 @@ class SecondListenerRagEngine {
     } else if (target === 'phone') {
       const m = text.match(/\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/);
       if (m) extractedValue = m[0].trim();
+    } else if (target === 'serviceAddress' || target === 'location') {
+      const m = collapsed.match(/\b(\d{1,6}\s+[A-Za-z0-9.\s,'-]{3,45})\b/);
+      if (m) extractedValue = m[1].trim();
+    } else if (target === 'leakLocation') {
+      extractedValue = this.extractLeakFixtureLocation(collapsed, spec);
+    } else if (target === 'preferredWindow') {
+      const m = collapsed.match(/\b((?:this|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)?\s*(?:morning|afternoon|evening|asap|right away|today|tomorrow|between\s+\d+\s*(?:and|to|-)\s*\d+|\d{1,2}\s*(?:am|pm)))\b/i);
+      if (m) extractedValue = m[1].trim();
+    }
+
+    // If caller corrected their name AND also provided the current slot's answer in the same breath (e.g. street address),
+    // apply the correction silently to session state and let the main step handler process the slot answer!
+    if (target === 'callerName' && extractedValue && (currentSlot === 'serviceAddress' || currentSlot === 'location') && /\b\d{1,6}\s+[A-Za-z0-9.\s]+\b(?:st|street|ave|avenue|rd|road|dr|drive|ln|lane|blvd|boulevard|ct|court|way|pl|place|pkwy|parkway|cir|circle|trail|hwy|highway|calle|avenida)\b/i.test(collapsed)) {
+      this.applyCorrectionValue(session, target, extractedValue, spec);
+      return null;
     }
 
     const repromptText = this.getRepromptForSlot(currentSlot, lang, spec, session);
@@ -760,8 +965,12 @@ class SecondListenerRagEngine {
       this.applyCorrectionValue(session, target, extractedValue, spec);
       if (session) session.pendingCorrectionSlot = null;
       const ack = lang === 'es'
-        ? `Entendido, he actualizado ${this.getSlotName(target, 'es')} a "${extractedValue}" en su expediente. Ahora, volviendo a lo anterior: ${repromptText}`
-        : `Understood, I've updated the ${this.getSlotName(target, 'en')} to ${extractedValue} for your report. Now, returning to: ${repromptText}`;
+        ? (target === 'callerName'
+            ? `Gracias, he actualizado su nombre a ${extractedValue}. ${repromptText}`
+            : `Entendido, he actualizado ${this.getSlotName(target, 'es')} a "${extractedValue}" en su expediente. ${repromptText}`)
+        : (target === 'callerName'
+            ? `Thank you, I've updated your name to ${extractedValue}. ${repromptText}`
+            : `Understood, I've updated the ${this.getSlotName(target, 'en')} to ${extractedValue} for your report. ${repromptText}`);
       return {
         handled: true,
         type: 'CORRECTION_APPLIED',
@@ -869,13 +1078,28 @@ class SecondListenerRagEngine {
   applyCorrectionValue(session, slot, value, spec = 'claims') {
     if (!session || !slot || !value) return;
     const val = String(value).trim();
-    if (spec === 'plumbing' || (session.specialist && session.specialist !== 'claims')) {
+    if (spec !== 'claims' || (session.specialist && session.specialist !== 'claims') || session.trade) {
       session.ticket = session.ticket || {};
-      if (slot === 'serviceAddress' || slot === 'location') session.ticket.serviceAddress = val;
-      else if (slot === 'callerName') session.ticket.callerName = val;
-      else if (slot === 'phone') session.ticket.callerPhone = val;
-      else if (slot === 'problemDescription') session.ticket.problemDescription = val;
-      else session.ticket[slot] = val;
+      if (slot === 'serviceAddress' || slot === 'location') {
+        session.ticket.serviceAddress = val;
+        if ('address' in session) session.address = val;
+      } else if (slot === 'callerName') {
+        session.ticket.callerName = val;
+        if ('callerName' in session) session.callerName = val;
+      } else if (slot === 'phone') {
+        session.ticket.callerPhone = val;
+        if ('phone' in session) session.phone = val;
+      } else if (slot === 'problemDescription') {
+        session.ticket.problemDescription = val;
+        if ('issue' in session) session.issue = val;
+      } else if (slot === 'leakLocation') {
+        session.ticket.leakLocation = val;
+      } else if (slot === 'preferredWindow' || slot === 'scheduleWindow') {
+        session.ticket.preferredWindow = val;
+        if ('window' in session) session.window = val;
+      } else {
+        session.ticket[slot] = val;
+      }
     } else {
       session.fnolData = session.fnolData || {};
       session.fnolData.lossFacts = session.fnolData.lossFacts || {};
@@ -915,7 +1139,9 @@ class SecondListenerRagEngine {
       policyNumber: { en: 'policy number', es: 'número de póliza' },
       callerName: { en: 'name', es: 'nombre' },
       injury: { en: 'injury details', es: 'detalles de lesiones' },
-      timeOfLoss: { en: 'time of loss', es: 'hora y fecha del siniestro' }
+      timeOfLoss: { en: 'time of loss', es: 'hora y fecha del siniestro' },
+      leakLocation: { en: 'leak or fixture location', es: 'ubicación de la fuga' },
+      preferredWindow: { en: 'preferred appointment window', es: 'horario preferido' }
     };
     return (NAMES[slot] && NAMES[slot][lang]) || (lang === 'es' ? 'este dato' : 'this detail');
   }
@@ -939,18 +1165,20 @@ class SecondListenerRagEngine {
   }
 
   getRepromptForSlot(slot, lang = 'en', spec = 'claims', session = null) {
-    if (spec === 'plumbing') {
+    if (spec && spec !== 'claims') {
       if (lang === 'es') {
-        if (slot === 'serviceAddress') return '¿Cuál es la dirección del servicio, incluyendo la ciudad?';
-        if (slot === 'problemDescription') return '¿Qué está pasando hoy con su plomería?';
-        if (slot === 'scheduleWindow') return '¿Qué día y horario le funciona mejor para la visita?';
-        if (slot === 'shutOffValve') return '¿Pudo cerrar la llave de paso principal?';
+        if (slot === 'serviceAddress' || slot === 'address') return '¿Cuál es la dirección del servicio, incluyendo la ciudad?';
+        if (slot === 'problemDescription' || slot === 'issue') return '¿Qué problema presenta hoy y en qué parte de la propiedad se encuentra, como el baño, la cocina o una llave exterior?';
+        if (slot === 'scheduleWindow' || slot === 'preferredWindow' || slot === 'window') return '¿Qué día y horario le funciona mejor para la visita?';
+        if (slot === 'photoRequest' || slot === 'photos') return '¿Le gustaría que le envíe un enlace por mensaje de texto para subir una foto del problema?';
+        if (slot === 'shutOffValve') return '¿Pudo ubicar y cerrar la llave de paso principal?';
         return '¿Podría confirmarme los detalles para su visita de servicio?';
       } else {
-        if (slot === 'serviceAddress') return 'What is the service address including the city?';
-        if (slot === 'problemDescription') return "What's going on today with your plumbing?";
-        if (slot === 'scheduleWindow') return 'What day and time window works best for a technician visit?';
-        if (slot === 'shutOffValve') return 'Were you able to shut off the main water valve?';
+        if (slot === 'serviceAddress' || slot === 'address') return 'What is the service address, including the city?';
+        if (slot === 'problemDescription' || slot === 'issue') return 'What issue are you having today, and where is it located — such as the bathroom, kitchen, water heater, or an outside faucet?';
+        if (slot === 'scheduleWindow' || slot === 'preferredWindow' || slot === 'window') return 'What day and time window works best for a technician visit?';
+        if (slot === 'photoRequest' || slot === 'photos') return 'Would you like me to text a link to your phone so you can snap a quick photo of the issue?';
+        if (slot === 'shutOffValve') return 'Were you able to locate and shut off the water valve?';
         return 'Could you confirm the details for your service visit?';
       }
     }
@@ -1950,7 +2178,7 @@ class SecondListenerRagEngine {
     // If caller is answering a missing-fact prompt that they asked about on the previous turn
     if (session.awaitingFactFill && text.length >= 2) {
       const targetSlot = session.awaitingFactFill;
-      const isStillQuestion = /\b(what do you have|what is the|do you have)\b/i.test(text);
+      const isStillQuestion = /\?|\b(what do you have|what is the|do you have|where did you|how do you|qu[ée] tiene|de d[óo]nde)\b/i.test(text);
       if (!isStillQuestion) {
         session.awaitingFactFill = null;
         if (targetSlot === 'dateOfLoss') {
@@ -1969,14 +2197,41 @@ class SecondListenerRagEngine {
       }
     }
 
-    // Detect questions about what the bot currently has recorded in session.fnolData
-    const isDateInquiry = /\b(what\s+(?:do\s+you\s+have|is\s+listed|did\s+you\s+put|date\s+do\s+you\s+have).*\b(?:date|time|when)\b|\b(?:date|time)\s+of\s+loss\b.*\?|\bwhat\s+do\s+you\s+have\s+(?:as|is|for)\s+(?:the\s+)?(?:date|time)|qu[ée]\s+fecha\s+tiene)/i.test(text);
+    // Detect questions about what the bot currently has recorded in session.fnolData (including ASR phonetic variants like "law state" / "lost date" / "loss state" for "loss date")
+    const isDateInquiry = /\b(what\s+(?:do\s+you\s+have|is\s+listed|did\s+you\s+put|date\s+do\s+you\s+have).*\b(?:date|time|when|law\s+state|loss\s+state|lost\s+date|loss\s+date)\b|\b(?:date|time)\s+of\s+loss\b.*\?|\bwhat\s+do\s+you\s+have\s+(?:as|is|for|the)?\s*(?:the\s+)?(?:date|time|law\s+state|loss\s+state|lost\s+date|loss\s+date)|qu[ée]\s+fecha\s+tiene)/i.test(text);
     const isLocationInquiry = /\b(what\s+(?:address|location|street|city)\s+do\s+you\s+have|what\s+do\s+you\s+have\s+(?:as|for)\s+(?:the\s+)?(?:address|location|street)|qu[ée]\s+direcci[óo]n\s+tiene)/i.test(text);
     const isPolicyInquiry = /\b(what\s+(?:policy|policy\s+number)\s+do\s+you\s+have|what\s+do\s+you\s+have\s+.*\b(?:policy|p[oó]liza)\b|qu[ée]\s+p[oó]liza\s+tiene)/i.test(text);
     const isVehicleInquiry = /\b(what\s+(?:vehicle|car|truck|make|model)\s+do\s+you\s+have|what\s+do\s+you\s+have\s+(?:as|for)\s+(?:the\s+)?(?:vehicle|car)|qu[ée]\s+veh[íi]culo\s+tiene)/i.test(text);
+    const isSourceOfDetailsInquiry = /\b(where\s+did\s+you\s+get\s+(?:my|the|that|those)\s+(?:vehicle|car|policy|details|information)|how\s+do\s+you\s+(?:know|have)\s+(?:my|that)\s+(?:vehicle|car|acura|policy)|de\s+d[óo]nde\s+(?:sac[óo]|obtuvo)\s+(?:los\s+datos|mi\s+veh[íi]culo|la\s+p[oó]liza))/i.test(text);
     const isClaimRefInquiry = /\b(what\s+is\s+(?:my|the)\s+(?:claim|reference)\s+number|do\s+you\s+have\s+a\s+claim\s+number|cu[áa]l\s+es\s+(?:mi|el)\s+n[úu]mero\s+de\s+reclamo)/i.test(text);
 
+    // If caller answered a yes/no slot (like drivabilityLeaks: "Yes. Um, what do you have the law state as") before asking the fact question, preserve that slot answer!
+    if ((isDateInquiry || isLocationInquiry || isPolicyInquiry || isVehicleInquiry || isSourceOfDetailsInquiry) && session.pendingSlot === 'drivabilityLeaks' && !data.drivability) {
+      if (/^(?:yes|yeah|yep|s[íi])\b/i.test(text)) {
+        data.drivability = 'Drivable';
+      } else if (/^(?:no|nope)\b/i.test(text)) {
+        data.drivability = 'Non-Drivable';
+      }
+    }
+
+    if (isSourceOfDetailsInquiry) {
+      const vehName = data.vehicleInfo || '2022 Acura MDX';
+      const polNum = data.policyNumber || 'PA-8849201-NAT';
+      const reply = lang === 'es'
+        ? `Para que esta demostración abreviada sea rápida, precargamos un registro de póliza de muestra (${polNum}) y un vehículo de ejemplo (${vehName}) para que pueda ver de inmediato cómo se genera su Informe de Resumen de Llamada en vivo. En producción, Angel consulta los vehículos reales de la póliza del asegurado por su número de teléfono. ¿Confirmamos estos detalles para generar su informe ahora?`
+        : `For this fast abridged demo, we pre-populated a sample policy record (${polNum}) and sample insured vehicle (${vehName}) so you can quickly reach your live Claim Call Summary Report and Scene Map. In live carrier production, Angel pulls the policyholder's actual vehicles automatically from your policy system by phone number. Shall I lock in this summary so you can review your live report?`;
+      return { action: 'SESSION_FACT_READBACK', slot: 'vehicleInfo', recordedValue: vehName, text: reply };
+    }
+
     if (isDateInquiry) {
+      // Strip non-temporal ASR noise words (like "Sides" or "Change") from dateOfLoss before reading back
+      const hasValidTemporalWord = /\b(today|yesterday|tonight|night|morning|afternoon|evening|monday|tuesday|wednesday|thursday|friday|saturday|sunday|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|week|days?|hours?|hoy|ayer|anoche|mañana|tarde|noche|\d)\b/i;
+      if (data.dateOfLoss && !hasValidTemporalWord.test(String(data.dateOfLoss))) {
+        data.dateOfLoss = null;
+      }
+      if (data.timeOfLoss && !hasValidTemporalWord.test(String(data.timeOfLoss))) {
+        data.timeOfLoss = null;
+      }
       const recordedDate = [data.dateOfLoss, data.timeOfLoss && data.timeOfLoss !== data.dateOfLoss ? data.timeOfLoss : null].filter(Boolean).join(' at ');
       if (recordedDate) {
         const reply = lang === 'es'
@@ -2074,7 +2329,8 @@ class SecondListenerRagEngine {
     if (extracted && extracted.displayName) {
       const check = idEngine.evaluateIdentityPlausibility(extracted.displayName, speech);
       if (check.plausible) {
-        if (!session.hostCallerName || check.score >= (session.hostNamePlausibility || 0)) {
+        const isExplicitNameCorrection = /\b(my\s+name\s+is|last\s+name\s+is|surname\s+is|spelled)\b/i.test(speech);
+        if (!session.hostCallerName || (isExplicitNameCorrection && check.score >= (session.hostNamePlausibility || 0))) {
           session.hostCallerName = extracted.displayName;
           session.hostSpokenGreeting = extracted.spokenGreeting || extracted.displayName;
           session.hostNamePlausibility = check.score;

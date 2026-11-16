@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "evidenceClassification": "DETERMINISTIC_LIVE_ENGINE_STATE_AND_AUDIO_PACK_EVALUATION",
+  "commitSha": "faa644e9bac9cde889138c9239ff05a27257598f",
+  "executedAt": "2026-11-16T17:08:55.790Z",
+  "nodeVersion": "v24.11.1",
+  "totalCalls": 300,
+  "totalChecks": 5723,
+  "passedChecks": 5723,
+  "fieldRecallRate": 100,
+  "criticalAccuracyRate": 100,
+  "mirofishPassedCount": 300,
+  "fieldStateMachinePassedCount": 300,
+  "perilQuestionFlowPassedCount": 300,
+  "mappingGeoPassedCount": 300,
+  "sceneDiagramPassedCount": 300,
+  "axiRateSummaryPassedCount": 300,
+  "negPassRate": 100
+}

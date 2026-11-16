@@ -67,7 +67,7 @@ function lookupProspectByPhone(fromPhone) {
 // Emergency cues per trade (EN+ES). An emergency flags priority dispatch in
 // the ticket and the ack line — it never changes what information we collect.
 const URGENT = {
-  plumbing: /\b(burst|flood(ing|ed)?|sewage|sewer|backing\s+up|backed\s+up|water\s+heater\s+(?:is\s+)?(?:burst|leaking|flooding)|no\s+hot\s+water|gas\s+(?:leak|smell|odor)|smell\s+gas|rotten\s+egg|no\s+water|overflow(ing)?|slab\s+leak|foundation\s+leak|spinning\s+meter|meter\s+is\s+spinning|revent[óo]|inund(aci[óo]n|ando|a|ado|ada)?|tuber[íi]a\s+rota|fuga\s+activa|fuga\s+en\s+la\s+losa|fuga\s+de\s+(?:agua|gas)|olor\s+a\s+gas|aguas\s+negras|alcantarillado|sin\s+agua|sin\s+agua\s+caliente|desborda(ndo)?|caved\s+in|caving\s+in|pouring|gushing|spraying|niagara\s+falls|empez[oó]\s+a\s+salir|mucha\s+agua|sale\s+agua|saliendo\s+agua|botando\s+agua|tirando\s+agua|ruido\s+(?:horrible|raro|fuerte)|ahorita\s+mismo|urgente|urgent|emergency|emergencia|active\s+leak|leaking\s+(?:now|everywhere|badly|all\s+over|onto|into|from\s+the\s+bottom)|pipe\s+(?:broke|burst)|ceiling\s+caved)\b/i,
+  plumbing: /\b(burst|flood(ing|ed)?|sewage|sewer|backing\s+up|backed\s+up|water\s+heater\s+(?:is\s+)?(?:burst|leaking|flooding)|no\s+hot\s+water|gas\s+(?:leak|smell|odor)|smell\s+gas|rotten\s+egg|no\s+water|overflow(ing)?|slab\s+leak|foundation\s+leak|spinning\s+meter|meter\s+is\s+spinning|revent[óo]|inund(aci[óo]n|ando|a|ado|ada)?|tuber[íi]a\s+rota|fuga\s+activa|fuga\s+en\s+la\s+losa|fuga\s+de\s+(?:agua|gas)|olor\s+a\s+gas|aguas\s+negras|alcantarillado|sin\s+agua|sin\s+agua\s+caliente|desborda(ndo)?|caved\s+in|caving\s+in|pouring|gushing|spraying|niagara\s+falls|empez[oó]\s+a\s+salir|mucha\s+agua|sale\s+agua|saliendo\s+agua|botando\s+agua|tirando\s+agua|ruido\s+(?:horrible|raro|fuerte)|ahorita\s+mismo|urgente|urgent|emergency|emergencia|active\s+leak|leaking\s+(?:now|everywhere|badly|all\s+over|onto|into|in\s+the|through\s+the|across\s+the|down\s+the|under\s+the|out\s+of|from\s+the\s+bottom)|pipe\s+(?:broke|burst)|ceiling\s+caved)\b/i,
   hvac: /\b(no heat|no cooling|no air|stopped blowing|blowing cold|compressor|grinding|burnt|burning|9\d\s+degrees|gas smell|carbon monoxide|sin calefacci[óo]n|sin aire|olor a gas|mon[óo]xido)\b/i,
   roofing: /\b(active leak|leaking now|dripping|tore shingles|windstorm|storm|tree|collapse|hole|gotera activa|se est[aá] metiendo|árbol|arbol|colapso|agujero)\b/i,
   electrical: /\b(spark(ing|s)?|smoke|smoking|burning smell|no power|breaker|shock|chispas?|humo|sin luz|corto)\b/i,
@@ -128,11 +128,11 @@ const SPECIALISTS = {
     tradeNoun: { en: 'plumbing', es: 'plomería' },
     l10n: {
       en: {
-        greeting: `Thank you for calling the Agent Angel Plumbing Specialist 24/7 plumbing service line. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, and {PHONE_VALIDATION}`,
+        greeting: `Thank you for calling the Agent Angel Plumbing Specialist 24/7 plumbing service and emergency line. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, whether this is an emergency, and {PHONE_VALIDATION}`,
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
-        qProblem: `What plumbing issue can we help you with today?`,
-        containment: `If water is actively leaking or flowing, please turn off your main water shut-off valve or the valve under the fixture immediately—only if the valve is in a dry, safe location away from standing water or electrical panels—to prevent structural damage.`,
+        qProblem: `What plumbing issue can we help you with today, and where is it located — such as the bathroom, kitchen, water heater, or an outside faucet?`,
+        containment: `If water is actively leaking or flowing, let's stop the water first: for a sink or toilet leak, turn the small oval valve underneath or behind the fixture clockwise, or if you aren't sure where your main water shut-off valve is, check inside the garage wall, near your water heater, or by the front outside faucet and turn the valve clockwise immediately—only if the valve is in a dry, safe location away from standing water or electrical panels—to prevent structural damage.`,
         containmentGas: `For your immediate safety, if you smell gas near your water heater or gas line, please do not touch any electrical switches or flames, shut off the gas valve only if safe to do so, and step outside while we alert our on-call emergency team and log your priority request.`,
         containmentSewer: `To prevent sewage from overflowing further into your home, please stop running all faucets, showers, dishwashers, and toilets immediately while our on-call staff reviews your priority request.`,
         qUrgency: `Is this an emergency that needs someone out today, or would you like to schedule a visit?`,
@@ -145,14 +145,14 @@ const SPECIALISTS = {
         qSummaryConfirm: `Let me confirm the details of your service request: {NAME}, at {ADDRESS}, for {PROBLEM}, marked as {URGENCY}, with requested time window {WINDOW}. Is all of that information accurate?`,
         ackSummary: `Thank you for confirming your service details.`,
         closing: `Thank you, {NAME}. Your plumbing service job-ticket has been created with reference {REF} and queued for our on-call dispatch team to confirm your appointment window shortly.`,
-        hints: 'leak, clog, burst pipe, water heater, drain, toilet, faucet, sewer, emergency, schedule, photos, photo link, yes, correct, accurate, español',
+        hints: 'leak, clog, burst pipe, water heater, drain, toilet, faucet, kitchen, bathroom, outside faucet, sewer, emergency, schedule, photos, photo link, yes, correct, accurate, español',
       },
       es: {
-        greeting: `Gracias por llamar al Especialista de Plomería de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, y {PHONE_VALIDATION}`,
+        greeting: `Gracias por llamar a la línea de servicio y emergencias 24/7 del Especialista de Plomería de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, saber si es una emergencia, y {PHONE_VALIDATION}`,
         selector: `For English, say English or press one.`,
         qAddress: `¿Cuál es la dirección del servicio, incluyendo la ciudad?`,
-        qProblem: `¿En qué problema de plomería le podemos ayudar hoy?`,
-        containment: `Si el agua se está filtrando o fluyendo activamente, por favor cierre la llave de paso principal de agua o la válvula debajo del lavabo inmediatamente—solo si se encuentra en un lugar seco y seguro lejos de cables eléctricos—para evitar daños estructurales.`,
+        qProblem: `¿En qué problema de plomería le podemos ayudar hoy y en qué parte se encuentra — como el baño, la cocina, el calentador de agua o una llave exterior?`,
+        containment: `Si el agua se está filtrando o fluyendo activamente, detengamos el agua primero: si es en un lavabo o inodoro, gire a la derecha la pequeña llave ovalada debajo o detrás del mueble, o si no está seguro de dónde está su llave de paso principal, revise en la pared interior del garaje, cerca del calentador de agua o junto a la llave exterior frontal y ciérrela de inmediato—solo si se encuentra en un lugar seco y seguro lejos de cables eléctricos—para evitar daños estructurales.`,
         containmentGas: `Por su seguridad inmediata, si percibe olor a gas cerca del calentador o tubería, no toque interruptores eléctricos ni flamas, cierre la válvula de gas solo si es seguro hacerlo y salga de la propiedad mientras alertamos a nuestro equipo de guardia.`,
         containmentSewer: `Para evitar que las aguas negras sigan desbordándose en su hogar, por favor deje de usar inmediatamente todas las llaves de agua, regaderas, lavavajillas e inodoros mientras nuestro equipo revisa su solicitud prioritaria.`,
         qUrgency: `¿Es una emergencia que necesita a alguien hoy mismo, o desea programar una visita?`,
@@ -165,7 +165,7 @@ const SPECIALISTS = {
         qSummaryConfirm: `Permítame confirmar los detalles de su solicitud de servicio: {NAME}, en {ADDRESS}, por {PROBLEM}, marcado como {URGENCY}, con horario solicitado {WINDOW}. ¿Es correcta toda esta información?`,
         ackSummary: `Gracias por confirmar los detalles de su servicio.`,
         closing: `Gracias, {NAME}. Su solicitud de servicio de plomería ha sido registrada con la referencia {REF} y nuestro equipo de guardia confirmará su horario en breve.`,
-        hints: 'fuga, obstrucción, tubería rota, calentador de agua, drenaje, inodoro, llave, alcantarillado, emergencia, cita, fotos, enlace de fotos, sí, correcto, exacto, English',
+        hints: 'fuga, obstrucción, tubería rota, calentador de agua, drenaje, inodoro, llave, cocina, baño, llave exterior, alcantarillado, emergencia, cita, fotos, enlace de fotos, sí, correcto, exacto, English',
       },
     },
   },
@@ -176,16 +176,16 @@ const SPECIALISTS = {
     tradeNoun: { en: 'heating and cooling', es: 'climatización' },
     l10n: {
       en: {
-        greeting: `Thank you for calling the Agent Angel H V A C Specialist. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, and {PHONE_VALIDATION}`,
+        greeting: `Thank you for calling the Agent Angel H V A C Specialist 24/7 service and emergency line. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, whether this is an emergency, and {PHONE_VALIDATION}`,
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
-        qProblem: `What heating or cooling issue are you experiencing today?`,
-        containment: `For your comfort and system safety, please switch the thermostat to off so the compressor does not overheat while our on-call team reviews your request.`,
+        qProblem: `What heating or cooling issue are you experiencing today, and which unit or area of the property is affected?`,
+        containment: `For your comfort and system safety, if the unit is blowing warm air, icing over, or making a grinding sound, please switch the thermostat fan and system mode to off so the compressor does not overheat while our on-call team reviews your request.`,
         qUrgency: `Is this an emergency that needs someone out today, or would you like to schedule a visit?`,
         qWindow: `What day and time window works best for you?`,
-        qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of your unit or thermostat?`,
+        qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of your unit, data plate, or thermostat?`,
         ackPhotos: `Awesome — I've dispatched the secure photo link to your mobile phone.`,
-        ackUrgent: `I'm so sorry you're dealing with that heat — I understand completely and we are here to help. I've flagged this as an emergency and marked your request for priority dispatch.`,
+        ackUrgent: `I'm so sorry you're dealing with that — I understand completely and we are here to help. I've flagged this as an emergency and marked your request for priority dispatch.`,
         ack: `Thank you.`,
         qSummaryConfirm: `Let me confirm the details of your service request: {NAME}, at {ADDRESS}, for {PROBLEM}, marked as {URGENCY}, with requested time window {WINDOW}. Is all of that information accurate?`,
         ackSummary: `Thank you for confirming your service details.`,
@@ -193,11 +193,11 @@ const SPECIALISTS = {
         hints: 'air conditioning, no cooling, no heat, furnace, thermostat, freon, compressor, filter, emergency, schedule, español',
       },
       es: {
-        greeting: `Gracias por llamar al Especialista de Climatización de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, y {PHONE_VALIDATION}`,
+        greeting: `Gracias por llamar a la línea de servicio y emergencias del Especialista de Climatización de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, saber si es una emergencia, y {PHONE_VALIDATION}`,
         selector: `For English, say English or press one.`,
         qAddress: `¿Cuál es la dirección del servicio, incluyendo la ciudad?`,
-        qProblem: `¿Qué problema con su sistema de climatización o aire está teniendo hoy?`,
-        containment: `Si percibe olor a quemado o gas, por favor apague el termostato de inmediato por seguridad.`,
+        qProblem: `¿Qué problema con su sistema de climatización o aire está teniendo hoy y qué área o unidad está afectada?`,
+        containment: `Si percibe olor a quemado, hielo en las líneas o ruidos fuertes, por favor apague el termostato de inmediato por seguridad.`,
         qUrgency: `¿Es una emergencia que necesita a alguien hoy mismo, o desea programar una visita?`,
         qWindow: `¿Qué día y horario le funciona mejor?`,
         qPhotos: `¿Puedo enviarle un enlace seguro por texto ahora mismo{PHOTO_PHONE_TARGET} para subir fotos de su unidad o termostato?`,
@@ -218,14 +218,14 @@ const SPECIALISTS = {
     tradeNoun: { en: 'roofing', es: 'techos' },
     l10n: {
       en: {
-        greeting: `Thank you for calling the Agent Angel Roofing Specialist. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, and {PHONE_VALIDATION}`,
+        greeting: `Thank you for calling the Agent Angel Roofing Specialist 24/7 service and emergency line. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, whether this is an active leak or emergency, and {PHONE_VALIDATION}`,
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
-        qProblem: `What roofing issue can our team inspect or help you with today?`,
-        containment: `If water is actively entering your home, please place a container underneath and avoid touching any wet ceiling fixtures for your safety.`,
+        qProblem: `What roofing or leak issue can our team inspect or help you with today, and which room or area of the roof is affected?`,
+        containment: `If water is actively entering your home through the ceiling, please place a container underneath to catch the drip and avoid touching any wet ceiling fixtures or switches for your safety.`,
         qUrgency: `Is this an emergency with active leaking, or would you like to schedule an inspection?`,
         qWindow: `What day and time window works best for you?`,
-        qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the roof damage or leak?`,
+        qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the roof damage or interior leak?`,
         ackPhotos: `Awesome — I've dispatched the secure photo link to your mobile phone.`,
         ackUrgent: `I'm so sorry to hear about the storm damage — I understand how stressful an active leak is, and we are here to help. I've flagged this as an emergency for priority dispatch.`,
         ack: `Thank you.`,
@@ -235,10 +235,10 @@ const SPECIALISTS = {
         hints: 'roof leak, shingles, storm damage, hail, gutter, inspection, tarp, emergency, schedule, español',
       },
       es: {
-        greeting: `Gracias por llamar al Especialista de Techos de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, y {PHONE_VALIDATION}`,
+        greeting: `Gracias por llamar a la línea de servicio y emergencias del Especialista de Techos de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, saber si tiene una gotera activa o emergencia, y {PHONE_VALIDATION}`,
         selector: `For English, say English or press one.`,
         qAddress: `¿Cuál es la dirección del servicio, incluyendo la ciudad?`,
-        qProblem: `¿Qué problema con su techo o cubierta necesita revisión hoy?`,
+        qProblem: `¿Qué problema con su techo necesita revisión hoy y en qué habitación o zona se encuentra?`,
         containment: `Si está entrando agua activamente, por favor coloque un recipiente debajo y evite tocar lámparas o cables húmedos.`,
         qUrgency: `¿Es una emergencia con una gotera activa, o desea programar una inspección?`,
         qWindow: `¿Qué día y horario le funciona mejor?`,
@@ -260,11 +260,11 @@ const SPECIALISTS = {
     tradeNoun: { en: 'electrical', es: 'electricidad' },
     l10n: {
       en: {
-        greeting: `Thank you for calling the Agent Angel Electrical Specialist. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, and {PHONE_VALIDATION}`,
+        greeting: `Thank you for calling the Agent Angel Electrical Specialist 24/7 service and emergency line. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, whether this is an emergency, and {PHONE_VALIDATION}`,
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
-        qProblem: `What electrical issue can our licensed electricians help you with today?`,
-        containment: `For your immediate safety, please stay completely clear of the sparking breaker panel or any exposed wiring while our licensed electrical team reviews your priority request.`,
+        qProblem: `What electrical issue can our licensed electricians help you with today, and which room, outlet, or breaker panel is affected?`,
+        containment: `For your immediate safety, please stay completely clear of any sparking breaker panel, warm outlets, or exposed wiring while our licensed electrical team reviews your priority request.`,
         qUrgency: `Is this an emergency power or safety issue today, or would you like to schedule a visit?`,
         qWindow: `What day and time window works best for you?`,
         qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the panel or fixture?`,
@@ -277,10 +277,10 @@ const SPECIALISTS = {
         hints: 'breaker, panel, outlet, sparking, power outage, wiring, generator, emergency, schedule, español',
       },
       es: {
-        greeting: `Gracias por llamar al Especialista Eléctrico de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, y {PHONE_VALIDATION}`,
+        greeting: `Gracias por llamar a la línea de servicio y emergencias del Especialista Eléctrico de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, saber si es una emergencia, y {PHONE_VALIDATION}`,
         selector: `For English, say English or press one.`,
         qAddress: `¿Cuál es la dirección del servicio, incluyendo la ciudad?`,
-        qProblem: `¿En qué problema eléctrico le podemos ayudar hoy?`,
+        qProblem: `¿En qué problema eléctrico le podemos ayudar hoy y qué habitación, contacto o panel está afectado?`,
         containment: `Por su seguridad, manténgase alejado de paneles con chispas o cables expuestos.`,
         qUrgency: `¿Es una emergencia eléctrica hoy mismo, o desea programar una visita?`,
         qWindow: `¿Qué día y horario le funciona mejor?`,
@@ -302,11 +302,11 @@ const SPECIALISTS = {
     tradeNoun: { en: 'dental and clinic', es: 'clínica dental' },
     l10n: {
       en: {
-        greeting: `Thank you for calling the Agent Angel Dental and Clinic Specialist. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, and {PHONE_VALIDATION}`,
+        greeting: `Thank you for calling the Agent Angel Dental and Clinic Specialist. Please note this call is recorded for quality assurance and you are speaking with an AI assistant. May I start with your first and last name, whether this is a dental emergency, and {PHONE_VALIDATION}`,
         selector: `Para español, diga español o presione dos.`,
         qAddress: `Which clinic location or city are you calling from?`,
-        qProblem: `What dental or clinical concern can we help you schedule today?`,
-        containment: `While we get you scheduled today, please avoid chewing on that side and apply a cold compress to the outside of your jaw to ease the swelling.`,
+        qProblem: `What dental concern can we help you schedule today, and which tooth or area is bothering you?`,
+        containment: `While we get you scheduled today, please avoid chewing on that side and apply a cold compress to the outside of your jaw to ease any swelling.`,
         qUrgency: `Are you experiencing acute pain or swelling that requires a same-day emergency slot, or is this a routine visit?`,
         qWindow: `What day and time window works best for your appointment?`,
         qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} for your patient intake and insurance card upload?`,
@@ -319,10 +319,10 @@ const SPECIALISTS = {
         hints: 'toothache, crown, cleaning, swelling, emergency, appointment, insurance, español',
       },
       es: {
-        greeting: `Gracias por llamar al Especialista de Clínica Dental de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, y {PHONE_VALIDATION}`,
+        greeting: `Gracias por llamar al Especialista de Clínica Dental de Agent Angel. Tenga en cuenta que esta llamada se graba para control de calidad y está hablando con un asistente de inteligencia artificial. ¿Puedo comenzar con su nombre y apellido, saber si es una urgencia dental, y {PHONE_VALIDATION}`,
         selector: `For English, say English or press one.`,
         qAddress: `¿Desde qué ciudad o sucursal nos llama?`,
-        qProblem: `¿Qué consulta dental o clínica podemos agendarle hoy?`,
+        qProblem: `¿Qué consulta dental o clínica podemos agendarle hoy y qué zona presenta molestia?`,
         qUrgency: `¿Presenta dolor agudo o inflamación que requiera atención de urgencia hoy mismo, o desea una cita de rutina?`,
         qWindow: `¿Qué día y horario le funciona mejor para su cita?`,
         qPhotos: `¿Puedo enviarle un enlace seguro por texto ahora mismo{PHOTO_PHONE_TARGET} para su registro y tarjeta de seguro?`,
@@ -343,7 +343,7 @@ const SPECIALISTS = {
     tradeNoun: { en: 'personal injury intake', es: 'recepción legal de lesiones' },
     l10n: {
       en: {
-        greeting: `Thank you for calling the Agent Angel Personal Injury Intake Specialist. Please note this call is recorded for quality assurance, you are speaking with an AI assistant, and this intake does not create an attorney-client relationship. May I start with your first and last name, and {PHONE_VALIDATION}`,
+        greeting: `Thank you for calling the Agent Angel Personal Injury Intake Specialist. Please note this call is recorded for quality assurance, you are speaking with an AI assistant, and this intake does not create an attorney-client relationship. May I start with your first and last name, whether anyone needs emergency medical care, and {PHONE_VALIDATION}`,
         selector: `Para español, diga español o presione dos.`,
         qAddress: `In what Texas city and street location did the incident occur?`,
         qProblem: `Briefly, what happened in the accident and what injuries were sustained?`,
@@ -360,7 +360,7 @@ const SPECIALISTS = {
         hints: 'car accident, truck accident, injured, hospital, police report, Texas, español',
       },
       es: {
-        greeting: `Gracias por llamar al Especialista de Recepción Legal de Agent Angel. Tenga en cuenta que esta llamada se graba para calidad, habla con un asistente de IA y esta toma de datos no crea una relación abogado-cliente. ¿Puedo comenzar con su nombre y apellido, y {PHONE_VALIDATION}`,
+        greeting: `Gracias por llamar al Especialista de Recepción Legal de Agent Angel. Tenga en cuenta que esta llamada se graba para calidad, habla con un asistente de IA y esta toma de datos no crea una relación abogado-cliente. ¿Puedo comenzar con su nombre y apellido, saber si alguien requiere atención médica de urgencia, y {PHONE_VALIDATION}`,
         selector: `For English, say English or press one.`,
         qAddress: `¿En qué ciudad y calle de Texas ocurrió el incidente?`,
         qProblem: `Brevemente, ¿qué ocurrió en el accidente y qué lesiones hubo?`,
@@ -1240,29 +1240,34 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
   }
 
 
+  // Universal 2nd Listener mid-flow correction & off-step slot update across ALL specialists and steps
+  if (userSpeech && secondListenerRagEngine && typeof secondListenerRagEngine.detectCorrection === 'function') {
+    const corrRes = secondListenerRagEngine.detectCorrection(userSpeech, session, {
+      lang,
+      spec: session.specialist || 'plumbing',
+      currentSlot: answered ? answered.field : null,
+      flow
+    });
+    if (corrRes && corrRes.handled) {
+      if (corrRes.targetSlot === 'callerName' && corrRes.newValue) {
+        session.callerSpokenGreeting = corrRes.newValue;
+      }
+      session.transcript += '\nCaller: ' + userSpeech;
+      session.transcript += '\n' + spec.displayName + ': ' + corrRes.spokenText;
+      return { speechChunks: corrRes.speechChunks, isFinal: false };
+    }
+  }
+
+  // Extract specific room / fixture location on any turn via 2nd Listener
+  if (userSpeech && secondListenerRagEngine && typeof secondListenerRagEngine.extractLeakFixtureLocation === 'function') {
+    const detectedFixtureLoc = secondListenerRagEngine.extractLeakFixtureLocation(userSpeech, session.specialist);
+    if (detectedFixtureLoc && !session.ticket.leakLocation) {
+      session.ticket.leakLocation = detectedFixtureLoc;
+    }
+  }
+
   // Specific check: service address detail map (must not accept bare city like "Dallas" or garbled street names)
   if (answered && answered.field === 'serviceAddress' && userSpeech) {
-    // Detect if caller is correcting their name / last name (e.g. "Sorry last name is Shipman ship p m, a n") instead of giving the address
-    const lastNameCorrectionMatch = userSpeech.match(/\b(?:last\s+name\s+is|surname\s+is|apellido\s+es|my\s+name\s+is\s+actually|spelled)\s+([A-Za-z]{2,18})\b/i);
-    if (lastNameCorrectionMatch && !/\b\d{1,5}\s+[A-Za-z]+\s+(?:street|st|road|rd|avenue|ave|blvd|boulevard|lane|ln|drive|dr|way|court|ct|highway|hwy|pkwy|parkway|loop|circle|cir|terrace|ter|place|pl|trail|calle|avenida)\b/i.test(userSpeech)) {
-      const correctedLastRaw = lastNameCorrectionMatch[1].trim();
-      const correctedLast = correctedLastRaw.charAt(0).toUpperCase() + correctedLastRaw.slice(1).toLowerCase();
-      const existingName = (session.ticket.callerName || session.fnolData.callerName || '').trim();
-      const firstPart = existingName.split(/\s+/)[0] || '';
-      const updatedFullName = (firstPart && firstPart.toLowerCase() !== correctedLast.toLowerCase() && !/^(?:valued|estimado|customer|cliente)$/i.test(firstPart))
-        ? `${firstPart} ${correctedLast}`
-        : (/shipman/i.test(correctedLast) ? `JD ${correctedLast}` : correctedLast);
-      session.ticket.callerName = updatedFullName;
-      session.fnolData.callerName = updatedFullName;
-      session.callerSpokenGreeting = updatedFullName;
-      const reaskAfterNameFix = lang === 'es'
-        ? `Gracias, he actualizado su nombre a ${updatedFullName}. ¿Cuál es la dirección del servicio, incluyendo la ciudad?`
-        : `Thank you, I've updated your name to ${updatedFullName}. What is the service address, including the city?`;
-      session.transcript += '\nCaller: ' + userSpeech;
-      session.transcript += '\n' + spec.displayName + ': ' + reaskAfterNameFix;
-      return { speechChunks: [{ voice: 'agent', text: reaskAfterNameFix }], isFinal: false };
-    }
-
     let cleanAddr = userSpeech
       .replace(/\$?\b(\d+)\.(\d{2})\b/g, '$1$2')
       .replace(/^\$\s*/, '')
@@ -1444,7 +1449,8 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
     const startsAffirmative = /^(?:yes|sure|claro|sí)(?:\s|$|[.,!])/iu;
 
     const isExplicitlyRefused = refusalPattern.test(textLower);
-    const isAffirmative = !isExplicitlyRefused && !discourseMarker.test(textLower) && (explicitGrant.test(textLower) || anchoredAffirmative.test(textLower) || startsAffirmative.test(textLower));
+    const isReadyAfterPause = Boolean(session.awaitingPhotoCapturePause && /\b(ready|got it|done|uploaded|took it|continue|go ahead|move on|next|ok|okay|yes|yeah|sure|listo)\b/i.test(textLower));
+    const isAffirmative = isReadyAfterPause || (!isExplicitlyRefused && !discourseMarker.test(textLower) && (explicitGrant.test(textLower) || anchoredAffirmative.test(textLower) || startsAffirmative.test(textLower)));
     session.ticket.photoConsent = isAffirmative;
     // Preserve prior Turn 1 SMS consent unless the caller explicitly revokes texting permission
     if (isExplicitlyRefused && /\b(text|sms|mensajes?|stop|quit|unsubscribe)\b/i.test(textLower)) {
@@ -1452,10 +1458,30 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
       session.smsConsent = false;
     } else if (isAffirmative || session.smsConsent) {
       session.ticket.smsConsent = Boolean(isAffirmative || session.smsConsent);
+      session.smsConsent = Boolean(isAffirmative || session.smsConsent);
     } else {
       session.ticket.smsConsent = false;
       session.smsConsent = false;
     }
+
+    const isLiveTwilioCall = Boolean(/^CA[0-9a-f]{32}$/i.test(session.callSid || '') || session.livePhotoPauseEnabled === true);
+    if (isAffirmative && isLiveTwilioCall && !session.awaitingPhotoCapturePause && !/\b(ready|got it|done|uploaded|took it|continue|skip)\b/i.test(textLower)) {
+      session.awaitingPhotoCapturePause = true;
+      delete session.ticket.photoRequest;
+      const pauseIdx = flow.findIndex(f => f.field === 'photoRequest');
+      if (pauseIdx >= 0) session.step = pauseIdx + 1;
+      const pausePrompt = lang === 'es'
+        ? 'Acabo de enviar ese enlace a su teléfono — tómese un momento para abrirlo y tomar una foto rápida si gusta, y solo diga "listo" cuando quiera que le confirme el resumen de su servicio.'
+        : 'I have just sent that link to your phone — take a moment to open it and snap a quick photo if you would like, and just say "ready" or "got it" whenever you are ready for me to confirm your service summary.';
+      session.transcript += '\n' + spec.displayName + ': ' + pausePrompt;
+      return {
+        speechChunks: [{ voice: 'agent', text: pausePrompt }],
+        isFinal: false,
+        smsConsent: true,
+        resendSms: true
+      };
+    }
+    session.awaitingPhotoCapturePause = false;
   }
 
   if (answered && answered.field === 'summaryConfirm') {
@@ -1548,6 +1574,9 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
       if (/^leaking\b/i.test(cleanProblem)) {
         cleanProblem = 'water ' + cleanProblem;
       }
+      if (session.ticket.leakLocation && !cleanProblem.toLowerCase().includes(session.ticket.leakLocation.toLowerCase())) {
+        cleanProblem = `${cleanProblem} (${session.ticket.leakLocation})`;
+      }
       let cleanWindow = (session.ticket.preferredWindow || session.ticket.serviceWindow || '')
         .replace(/^(?:yes|yeah|yep|ok|okay|sure|s[íi])[,.s]+(?:i\s+)?(?:already\s+)?(?:shut[\s-]*off|turned[\s-]*off|closed)\s+(?:the\s+)?(?:main\s+)?(?:emergency\s+)?(?:water\s+)?(?:shut[\s-]*off\s+)?valve(?:\s+and|,)?\s*/i, '')
         .replace(/^(?:yes,?\s*|yeah,?\s*)?(?:it'?s\s+an\s+emergency\s*(?:and\s+|so\s+|,\s*)?|es\s+una\s+emergencia\s*(?:y\s+|,\s*)?)/i, '')
@@ -1567,7 +1596,7 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
       };
     }
     const phoneVars = getPhoneVars(session.fromNumber, lang);
-    if (session.smsConsent) {
+    if (session.smsConsent || next.q === 'qPhotos') {
       phoneVars.PHOTO_PHONE_TARGET = '';
     }
     const questionVars = Object.assign({}, phoneVars, vars);
@@ -1602,12 +1631,12 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
     session.salesPivoted = true;
     session.tradeSalesPhase = 'qa';
     const angelClosing = lang === 'es'
-      ? `Gracias, ${cleanFinalName}. Su orden de servicio de plomería ha sido generada con la referencia ${session.claimRef} y enviada a su teléfono por mensaje de texto y confirmación por correo electrónico. Le comunico ahora mismo con Matthew para mostrarle su panel en vivo.`
-      : `Thank you, ${cleanFinalName}. Your plumbing service job-ticket has been created with reference ${session.claimRef} and dispatched to your mobile phone via text and email confirmation. Passing you over to Matthew now.`;
+      ? `Gracias, ${cleanFinalName}. Su orden de servicio ha sido generada con la referencia ${session.claimRef} y enviada a su teléfono por mensaje de texto. Le comunico ahora mismo con Matthew, su anfitrión de demostración.`
+      : `Thank you, ${cleanFinalName}. Your service job-ticket has been created with reference ${session.claimRef} and dispatched to your mobile phone via text. Passing you over to Demo Host Matthew now.`;
 
     const matthewIntro = lang === 'es'
-      ? `¡Aquí Matthew, su presentador de demostración! Ese fue nuestro motor de recepción de plomería en vivo. En menos de 60 segundos y al primer timbre, Angel capturó los datos, confirmó la dirección, brindó orientación para cerrar la llave de paso y envió su enlace de fotos y panel en vivo de AxiRate junto con la integración directa para ServiceTitan, Housecall Pro o Jobber para que nunca pierda llamadas de emergencia fuera de horario en el buzón de voz de un competidor. ¿Cómo se compara esto con la forma en que su negocio atiende las llamadas de emergencia hoy?`
-      : `Demo Host Matthew here! That was our live autonomous plumbing intake engine. In under 60 seconds on the first ring, Angel captured your information, confirmed the address, delivered shut-off guidance, and dispatched your photo link and live dashboard link via text and email confirmation — pushing the job-ticket straight into ServiceTitan, Housecall Pro, or Jobber so you never lose after-hours emergency calls to a competitor's voicemail. How does that compare to how your shop handles emergency calls today?`;
+      ? `¡Aquí Matthew, su anfitrión de demostración! Mientras hablaba con Angel, ella realizó cuatro funciones clave para su negocio: primero, contestó al primer timbre y guió al cliente sobre dónde ubicar y cerrar la llave de paso; segundo, capturó la ubicación exacta del problema, la dirección y envió un enlace de fotos por texto para que su técnico vea el trabajo antes de salir; tercero, envió la orden de despacho en 10 segundos a su teléfono y a sistemas como ServiceTitan, Housecall Pro o Jobber; y cuarto, puede activarla ahora mismo con estrella 72 mientras trabaja, en desborde de 3 timbres con estrella 71, o después de las 5 de la tarde. ¿Qué preguntas le puedo responder sobre cómo funciona esto para su negocio?`
+      : `Demo Host Matthew here! While you were on with Angel, she just did four concrete things for your shop: first, she answered on Ring 1 and coached the homeowner on where to find and shut off their water valve; second, she captured the exact leak location, verified the street address, and texted a live photo link so your tech sees the job before rolling a truck; third, she sent a 10-second SMS job-ticket straight to your phone and CRM like ServiceTitan, Housecall Pro, or Jobber; and fourth, you can turn her on right now with star 72 while you're under a sink, on 3-ring overflow with star 71, or after 5 PM. What questions can I answer about how this works for your business?`;
 
     session.transcript += '\n' + spec.displayName + ': ' + angelClosing;
     session.transcript += '\nDemo Host: ' + matthewIntro;

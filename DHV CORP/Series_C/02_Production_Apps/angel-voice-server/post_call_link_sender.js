@@ -70,26 +70,27 @@ const MESSAGES = {
   en: {
     smsBody: (ref, link) => 'Agent Angel Auto Claims: Your intake summary is ready at ' + link + '. Reply STOP to unsubscribe.',
     emailSubject: (ref) => 'Your Agent Angel call summary' + (ref ? ' — claim ' + ref : ''),
-    emailBody: (ref, link, prospect) => 'Thank you for your call to Agent Angel Auto Claims.\n\nYour complete call summary' + (ref ? ' for claim ' + ref : '') + ' is ready at:\n' + link + '\n\nExecutive Onboarding & LAE ROI Calculator (Access Code ' + prospect.token + '):\n' + prospect.url + '\n\nAgent Angel Auto Claims',
+    emailBody: (ref, link, prospect, includePromo = false) => 'Thank you for your call to Agent Angel Auto Claims.\n\nYour complete preliminary call summary' + (ref ? ' for claim ' + ref : '') + ' is ready at:\n' + link + (includePromo && prospect ? ('\n\nExecutive Onboarding & LAE ROI Calculator (Access Code ' + prospect.token + '):\n' + prospect.url) : '') + '\n\nAgent Angel Auto Claims',
   },
   es: {
     smsBody: (ref, link) => 'Agent Angel Auto Claims: Su resumen de reclamo está disponible en ' + link + '. Responda STOP para cancelar.',
     emailSubject: (ref) => 'Resumen de su llamada con Agent Angel' + (ref ? ' — reclamo ' + ref : ''),
-    emailBody: (ref, link, prospect) => 'Gracias por su llamada a Agent Angel Auto Claims.\n\nEl resumen completo de su llamada' + (ref ? ' para el reclamo ' + ref : '') + ' está listo en:\n' + link + '\n\nPortal Ejecutivo y Calculadora ROI (Código ' + prospect.token + '):\n' + prospect.url + '\n\nAgent Angel Auto Claims',
+    emailBody: (ref, link, prospect, includePromo = false) => 'Gracias por su llamada a Agent Angel Auto Claims.\n\nEl resumen preliminar completo de su llamada' + (ref ? ' para el reclamo ' + ref : '') + ' está listo en:\n' + link + (includePromo && prospect ? ('\n\nPortal Ejecutivo y Calculadora ROI (Código ' + prospect.token + '):\n' + prospect.url) : '') + '\n\nAgent Angel Auto Claims',
   },
 };
 
-function buildMessages(record, link) {
+function buildMessages(record = {}, link) {
   const lang = record.language === 'es' ? 'es' : 'en';
   const M = MESSAGES[lang];
   const ref = record.claimRef || '';
-  const prospect = buildProspectLink(record);
+  const includePromo = Boolean(record.mode === 'demo' || record.mode === 'sales' || record.mode === 'composite' || record.includeMarketingLink === true);
+  const prospect = includePromo ? buildProspectLink(record) : null;
   return {
     language: lang,
     prospect,
     sms: M.smsBody(ref, link),
     emailSubject: M.emailSubject(ref),
-    emailBody: M.emailBody(ref, link, prospect),
+    emailBody: M.emailBody(ref, link, prospect, includePromo),
   };
 }
 
@@ -297,7 +298,7 @@ function sendEmailViaNodemailer(nodemailer, { to, subject, body }) {
 
 // ---- Pure Node TLS SMTP (zero external npm dependencies, works in alpine containers) ----
 function sendEmailViaTlsSmtp({ to, subject, body }) {
-  const user = process.env.EMAIL_USER || process.env.GMAIL_USER || 'joshuadshipman@gmail.com';
+  const user = process.env.EMAIL_USER || process.env.GMAIL_USER || '';
   const pass = process.env.EMAIL_APP_PASSWORD || process.env.GOOGLE_APP_PASSWORD;
   if (!user || !pass) {
     return Promise.reject(new Error('EMAIL_USER or EMAIL_APP_PASSWORD missing'));
@@ -498,11 +499,8 @@ async function sendPostCallLink({ record, link, transcriptDir, fromNumber } = {}
 
     // ---- Email channel --------------------------------------------------------
     let emailTo = (record.email || process.env.POSTCALL_EMAIL_TO || '').trim();
-    if (!emailTo && record.from && (record.from.includes('7549990710') || record.from === '+17549990710')) {
-      emailTo = process.env.CEO_ALERT_EMAIL || 'joshuadshipman@gmail.com';
-    }
     const nodemailer = resolveNodemailer();
-    const haveCreds = !!((process.env.EMAIL_USER || process.env.GMAIL_USER || 'joshuadshipman@gmail.com') && (process.env.EMAIL_APP_PASSWORD || process.env.GOOGLE_APP_PASSWORD));
+    const haveCreds = !!((process.env.EMAIL_USER || process.env.GMAIL_USER) && (process.env.EMAIL_APP_PASSWORD || process.env.GOOGLE_APP_PASSWORD));
     if (!emailTo) {
       const row = enqueueOutbox(transcriptDir, {
         channel: 'email', status: 'QUEUED_NO_RECIPIENT', callSid: result.callSid,

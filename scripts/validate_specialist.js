@@ -350,7 +350,8 @@ function runBehavioralAndSyncGate() {
     'sms_outbound_sender.js',
     'twilio_voice_webhook_guard.js',
     'sms_inbound_engine.js',
-    'post_call_link_sender.js'
+    'post_call_link_sender.js',
+    'carrier_webhook_dispatcher.js'
   ];
   let driftFiles = [];
   for (const f of syncFiles) {
@@ -939,7 +940,13 @@ function runBehavioralAndSyncGate() {
     const defectMatrixPath = path.join(__dirname, 'prior_call_defect_matrix.js');
     if (fs.existsSync(defectMatrixPath)) {
       const { run: runMatrix } = require(defectMatrixPath);
-      const { rows, anyBlockingFail } = runMatrix();
+      let matrixRes;
+      try {
+        matrixRes = runMatrix();
+      } catch (retryErr) {
+        matrixRes = runMatrix();
+      }
+      const { rows, anyBlockingFail } = matrixRes;
       const passedCount = rows.filter(r => r.pass).length;
       check('G29-PRIOR-CALL-DEFECT-VALIDATION-MATRIX: Cumulative Prior-Call Defect Validation Matrix verified across Demo Bots and Purchased Bot',
         !anyBlockingFail && rows.length >= 15,

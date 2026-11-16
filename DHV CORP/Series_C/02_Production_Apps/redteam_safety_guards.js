@@ -47,7 +47,7 @@ const RX = {
   explicitEmergency: /\b(emergency|911|nine one one|emergencia)\b/i,
   severe: /\b(badly|severe(?:ly)?|serious(?:ly)?|a lot of blood|can'?t breathe|grave|mucha sangre)\b/i,
   minor: /(\bi(?:'m| am) (?:only )?(?:1[0-7]|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)(?: years?(?: old)?)?\b|\bi(?:'m| am) (?:a )?minor\b|\bi(?:'m| am) under (?:18|eighteen)\b|\bi(?:'m| am) (?:just )?a kid\b|\btengo (?:1[0-7]|diez|once|doce|trece|catorce|quince|diecis[eé]is|diecisiete) a[ñn]os\b|\bsoy menor(?: de edad)?\b)/i,
-  adultTakeover: /(\b(?:this is|it's|i'?m|i am|soy|habla) (?:his|her|their|the|el|la|su)? ?(?:dad|father|mom|mother|parent|guardian|policyholder|policy holder|named insured|papá|padre|mamá|madre|tutor|asegurad[oa])\b|\bi(?:'m| am) (?:an adult|over (?:18|eighteen)|the (?:insured|policyholder))\b|\b(?:i|we) have the policy\b|\bsoy (?:mayor de edad|adulto|adulta)\b)/i,
+  adultTakeover: /(\b(?:this is|it's|i'?m|i am|soy|habla) (?:his|her|their|the|el|la|su)? ?(?:dad|father|mom|mother|parent|guardian|policyholder|policy holder|named insured|papá|padre|mamá|madre|tutor|asegurad[oa])\b|\bi(?:'m| am) (?:an adult|over (?:18|eighteen)|the (?:insured|policyholder|adult policyholder))\b|\bsoy (?:mayor de edad|adulto|adulta|el asegurado|la asegurada)\b)/i,
   coverage: /(\bis (?:this|it|that|my \w+) covered\b|\bam i covered\b|\bwill (?:this|it|that) be covered\b|\bdoes my policy cover\b|\bhow much (?:will|would|do|are) (?:you|i|we|they) ?(?:pay|get|receive|owe)\b|\bhow much (?:is|am i) (?:going to|gonna) (?:get|receive)\b|\bwhat(?:'s| is) my payout\b|\bpay(?:out|ment) amount\b|\best[aá] cubierto\b|\bme cubre\b|\bcubre (?:esto|mi p[oó]liza)\b|\bcu[aá]nto (?:me )?(?:van a )?pagar\b|\bcu[aá]nto recibo\b|\bthat'?s too (?:expensive|much)\b|\bi can'?t afford\b|\bno puedo pagar\b|\bes muy caro\b)/i,
 };
 
@@ -175,10 +175,18 @@ function coerceAxiScore(value, fallback) {
 /** L-15: outreach enrollment requires explicit, affirmative consent captured on the call. */
 function autoEnrollDecision(session) {
   const d = (session && session.fnolData) || {};
-  const explicit = Boolean(session && (session.smsConsent === true || session.outreachConsent === true || d.explicit_consent === true || d.outreachConsent === true));
+  // Purpose-specific consent: transactional FNOL smsConsent alone does NOT authorize B2B marketing drip enrollment
+  const isB2bSalesMode = Boolean(session && (session.mode === 'sales' || session.mode === 'sales_only' || session.mode === 'composite'));
+  const explicit = Boolean(session && (
+    session.outreachConsent === true ||
+    session.marketingOptIn === true ||
+    d.explicit_consent === true ||
+    d.outreachConsent === true ||
+    (isB2bSalesMode && session.smsConsent === true)
+  ));
   return {
     allowed: explicit,
-    reason: explicit ? 'EXPLICIT_CONSENT_ON_CALL' : 'SUPPRESSED_NO_EXPLICIT_CONSENT',
+    reason: explicit ? 'EXPLICIT_OUTREACH_CONSENT_ON_CALL' : 'SUPPRESSED_NO_EXPLICIT_OUTREACH_CONSENT',
     auto_enroll: explicit,
     explicit_consent: explicit,
   };

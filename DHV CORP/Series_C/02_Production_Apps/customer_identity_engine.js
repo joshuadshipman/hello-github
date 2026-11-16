@@ -23,15 +23,16 @@ const HONORIFICS = new Set([
 const BANNED_WORDS = new Set([
   'none', 'anonymous', 'unknown', 'caller', 'user', 'test', 'tester',
   'na', 'n/a', 'no', 'yes', 'yeah', 'yep', 'nope', 'sure', 'please', 'thanks', 'thank',
-  'i', 'you', 'we', 'they', 'he', 'she', 'it', 'me', 'us', 'my', 'your', 'our', 'their', 'his', 'her',
+  'a', 'an', 'the', 'i', 'you', 'we', 'they', 'he', 'she', 'it', 'me', 'us', 'my', 'your', 'our', 'their', 'his', 'her',
   'am', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might',
   'go', 'ahead', 'record', 'recording', 'recorded', 'consent', 'permission', 'agree', 'agreed', 'authorize', 'allow',
   'correct', 'accurate', 'right', 'wrong', 'confirm', 'confirmed', 'confirmation', 'everything', 'all', 'that', 'this',
   'si', 'sí', 'claro', 'por', 'favor', 'gracias', 'todo', 'esta', 'está', 'correcto', 'bien', 'autorizo', 'grabacion', 'grabación', 'permiso', 'acuerdo',
   'nothing', 'nobody', 'anyone', 'someone', 'everyone', 'everybody',
   'um', 'uh', 'uhm', 'umm', 'er', 'ah', 'oh', 'hmm', 'hm', 'huh',
-  'plumbing', 'plumber', 'pipe', 'leak', 'accident', 'claim', 'insurance', 'policy', 'poliza', 'póliza',
+  'plumbing', 'plumber', 'pipe', 'leak', 'accident', 'claim', 'claims', 'insurance', 'policy', 'poliza', 'póliza',
   'agent', 'angel', 'operator', 'human', 'rep', 'representative',
+  'manager', 'managers', 'director', 'directors', 'vp', 'vice', 'president', 'supervisor', 'adjuster', 'adjusters', 'examiner', 'executive', 'chief', 'officer', 'owner', 'founder', 'ceo', 'cfo', 'coo', 'cto', 'cio', 'head', 'lead', 'analyst', 'counsel', 'associate', 'specialist', 'coordinator', 'administrator',
   'ready', 'start', 'begin', 'help', 'question', 'questions', 'demo', 'service',
   'company', 'companies', 'business', 'organization', 'carrier', 'firm',
   'corp', 'corporation', 'llc', 'inc', 'product', 'platform', 'system',
@@ -590,6 +591,7 @@ function extractCallerRoleAndLevel(speechText) {
 
 module.exports = {
   extractCallerIdentity,
+  collapseSpelledLetters,
   evaluateIdentityPlausibility,
   extractCallerRoleAndLevel,
   formatSpellBackLetters,

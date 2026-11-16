@@ -47,7 +47,8 @@ const SYNC_FILES = [
   'sms_outbound_sender.js',
   'twilio_voice_webhook_guard.js',
   'sms_inbound_engine.js',
-  'post_call_link_sender.js'
+  'post_call_link_sender.js',
+  'carrier_webhook_dispatcher.js'
 ];
 
 function syncAll() {

@@ -2,23 +2,23 @@
   "pack": "PLUMBING_300_CALL_REALISTIC_PACK_V1",
   "auditType": "MIROFISH_5_PILLAR_PERFORMANCE_AUDIT",
   "evidenceClassification": "DETERMINISTIC_ENGINE_STATE_AND_SPEECH_EVALUATION",
-  "commitSha": "5c69d47c9a6f6c049a619772a19682d00891b9c1",
-  "auditedAt": "2026-11-16T00:19:49.296Z",
+  "commitSha": "94367da283a6df3fe49f7519af73c8ae68f1f0a8",
+  "auditedAt": "2026-11-16T17:05:30.472Z",
   "totalCalls": 300,
-  "averageScore": 93.6,
+  "averageScore": 93.93,
   "speechTruthPassCount": 300,
   "speechViolationsTotal": 0,
   "bandDistribution": {
-    "EXCELLENT": 287,
-    "STRONG": 1,
+    "EXCELLENT": 288,
+    "STRONG": 0,
     "ACCEPTABLE": 0,
     "NEEDS_OPTIMIZATION": 12,
     "FAIL": 0
   },
   "pillarAverages": {
-    "intakeAccuracy": 98,
+    "intakeAccuracy": 98.3,
     "empathyAndTone": 93.47,
-    "consultativePitch": 99,
+    "consultativePitch": 100,
     "objectionHandling": 82.6,
     "leadCaptureAndConversion": 100
   },
@@ -71,7 +71,7 @@
     {
       "group": "adversarial_bilingual_garbled_asr",
       "callsCount": 30,
-      "averageScore": 92.3
+      "averageScore": 95.6
     }
   ],
   "results": [
@@ -6642,7 +6642,7 @@
       "callId": "PLB-300-271",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 90,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
@@ -6650,74 +6650,71 @@
       "breakdown": {
         "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-272",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 87,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
       "speechViolations": [],
       "breakdown": {
-        "intakeAccuracy": 85,
+        "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-273",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 87,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
       "speechViolations": [],
       "breakdown": {
-        "intakeAccuracy": 85,
+        "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-274",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 90,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
@@ -6725,73 +6722,71 @@
       "breakdown": {
         "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-275",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 87,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
       "speechViolations": [],
       "breakdown": {
-        "intakeAccuracy": 85,
+        "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-276",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 82,
-      "band": "STRONG",
+      "score": 94,
+      "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
       "speechViolations": [],
       "breakdown": {
-        "intakeAccuracy": 68,
+        "intakeAccuracy": 83,
         "empathyAndTone": 100,
-        "consultativePitch": 69,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
+        "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-277",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 90,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
@@ -6799,74 +6794,23 @@
       "breakdown": {
         "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
     },
     {
       "callId": "PLB-300-278",
       "group": "adversarial_bilingual_garbled_asr",
       "language": "es",
-      "score": 87,
-      "band": "EXCELLENT",
-      "dispatchState": "REQUEST_CAPTURED",
-      "speechTruthPassed": true,
-      "speechViolations": [],
-      "breakdown": {
-        "intakeAccuracy": 85,
-        "empathyAndTone": 100,
-        "consultativePitch": 70,
-        "objectionHandling": 85,
-        "leadCaptureAndConversion": 100
-      },
-      "strengths": [
-        "High slot capture accuracy across trade intake fields with safety triage.",
-        "Clear, empathetic acknowledgment without insurance or technical jargon.",
-        "Dispatched live dashboard/dispatch preview link with zero-pressure close."
-      ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
-    },
-    {
-      "callId": "PLB-300-279",
-      "group": "adversarial_bilingual_garbled_asr",
-      "language": "es",
-      "score": 87,
-      "band": "EXCELLENT",
-      "dispatchState": "REQUEST_CAPTURED",
-      "speechTruthPassed": true,
-      "speechViolations": [],
-      "breakdown": {
-        "intakeAccuracy": 85,
-        "empathyAndTone": 100,
-        "consultativePitch": 70,
-        "objectionHandling": 85,
-        "leadCaptureAndConversion": 100
-      },
-      "strengths": [
-        "High slot capture accuracy across trade intake fields with safety triage.",
-        "Clear, empathetic acknowledgment without insurance or technical jargon.",
-        "Dispatched live dashboard/dispatch preview link with zero-pressure close."
-      ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
-    },
-    {
-      "callId": "PLB-300-280",
-      "group": "adversarial_bilingual_garbled_asr",
-      "language": "es",
-      "score": 90,
+      "score": 98,
       "band": "EXCELLENT",
       "dispatchState": "REQUEST_CAPTURED",
       "speechTruthPassed": true,
@@ -6874,18 +6818,65 @@
       "breakdown": {
         "intakeAccuracy": 100,
         "empathyAndTone": 100,
-        "consultativePitch": 70,
+        "consultativePitch": 100,
         "objectionHandling": 85,
         "leadCaptureAndConversion": 100
       },
       "strengths": [
         "High slot capture accuracy across trade intake fields with safety triage.",
         "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
         "Dispatched live dashboard/dispatch preview link with zero-pressure close."
       ],
-      "recommendations": [
-        "Focus on proving competency through live intake and consultative operational value rather than pushing sales."
-      ]
+      "recommendations": []
+    },
+    {
+      "callId": "PLB-300-279",
+      "group": "adversarial_bilingual_garbled_asr",
+      "language": "es",
+      "score": 98,
+      "band": "EXCELLENT",
+      "dispatchState": "REQUEST_CAPTURED",
+      "speechTruthPassed": true,
+      "speechViolations": [],
+      "breakdown": {
+        "intakeAccuracy": 100,
+        "empathyAndTone": 100,
+        "consultativePitch": 100,
+        "objectionHandling": 85,
+        "leadCaptureAndConversion": 100
+      },
+      "strengths": [
+        "High slot capture accuracy across trade intake fields with safety triage.",
+        "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
+        "Dispatched live dashboard/dispatch preview link with zero-pressure close."
+      ],
+      "recommendations": []
+    },
+    {
+      "callId": "PLB-300-280",
+      "group": "adversarial_bilingual_garbled_asr",
+      "language": "es",
+      "score": 98,
+      "band": "EXCELLENT",
+      "dispatchState": "REQUEST_CAPTURED",
+      "speechTruthPassed": true,
+      "speechViolations": [],
+      "breakdown": {
+        "intakeAccuracy": 100,
+        "empathyAndTone": 100,
+        "consultativePitch": 100,
+        "objectionHandling": 85,
+        "leadCaptureAndConversion": 100
+      },
+      "strengths": [
+        "High slot capture accuracy across trade intake fields with safety triage.",
+        "Clear, empathetic acknowledgment without insurance or technical jargon.",
+        "Proved competency via 24/7 after-hours triage and non-pushy schedule link.",
+        "Dispatched live dashboard/dispatch preview link with zero-pressure close."
+      ],
+      "recommendations": []
     },
     {
       "callId": "PLB-300-281",
