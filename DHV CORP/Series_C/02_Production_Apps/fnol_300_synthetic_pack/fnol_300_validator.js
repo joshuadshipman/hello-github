@@ -184,7 +184,7 @@ function runValidation() {
   // --- STAGE 4: LIVE EXTRACTION ENGINE BENCHMARK (FIELD RECALL, ACCURACY & MIROFISH QA) ---
   console.log('\n[STAGE 4] Executing Live Claims Intake Engine & MiroFish Benchmark on 300 Calls...');
 
-  const prodAppsDir = 'c:/Users/17549/antigravity/DHV CORP/Series_C/02_Production_Apps';
+  const prodAppsDir = process.env.PACK_ENGINE_PATH || path.resolve(__dirname, '..');
   const claimsEngine = require(path.join(prodAppsDir, 'claims_intake_engine.js'));
   const callReviewAgent = require(path.join(prodAppsDir, 'call_review_agent.js'));
   const sceneDiagramEngine = require(path.join(prodAppsDir, 'scene_diagram_engine.js'));

@@ -59,6 +59,7 @@ function checkQuietHours(opts = {}) {
   const allowed = localHour >= 8 && localHour < 20;
   return {
     allowed,
+    isQuietHours: !allowed,
     localHour,
     timezone: tz,
     reason: allowed ? 'WITHIN_PERMITTED_WINDOW_0800_2000' : 'QUIET_HOURS_BLOCK_OUTSIDE_0800_2000'
@@ -82,15 +83,16 @@ async function sendSms({ to, from, body, hasAffirmativeConsent, recipientTimezon
     };
   }
 
-  // 1. Check durable STOP opt-out & consent via sms_inbound_engine
+  // 1. Check durable STOP opt-out & consent via sms_inbound_engine (handles both boolean and object return)
   if (smsInboundEngine && typeof smsInboundEngine.isOptedOut === 'function') {
     const optOutCheck = smsInboundEngine.isOptedOut(to);
-    if (optOutCheck && optOutCheck.optedOut) {
+    const isStopped = typeof optOutCheck === 'boolean' ? optOutCheck : Boolean(optOutCheck && optOutCheck.optedOut);
+    if (isStopped) {
       return {
         sent: false,
         delivered: false,
         state: SMS_STATES.SUPPRESSED,
-        reason: optOutCheck.reason || 'OPTED_OUT_STOP_LEDGER',
+        reason: (optOutCheck && optOutCheck.reason) || 'OPTED_OUT_STOP_LEDGER',
         dryRun: effectiveDryRun,
         messageSid: null,
         to,
@@ -102,7 +104,10 @@ async function sendSms({ to, from, body, hasAffirmativeConsent, recipientTimezon
   // 2. Affirmative consent check (fail-closed unless explicitly granted)
   let consentGranted = hasAffirmativeConsent === true;
   if (!consentGranted && smsInboundEngine && typeof smsInboundEngine.getMessagingConsent === 'function') {
-    const consentStatus = smsInboundEngine.getMessagingConsent(to, { hasAffirmativeConsent });
+    const consentStatus = smsInboundEngine.getMessagingConsent(to, {
+      requireAffirmativeConsent: true,
+      hasAffirmativeConsent: Boolean(hasAffirmativeConsent)
+    });
     consentGranted = Boolean(consentStatus && consentStatus.consented === true);
   }
   if (!consentGranted) {

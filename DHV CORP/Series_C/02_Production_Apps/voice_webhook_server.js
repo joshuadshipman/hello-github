@@ -113,10 +113,25 @@ try {
 let carrierWebhookDispatcher;
 try {
   carrierWebhookDispatcher = require('./carrier_webhook_dispatcher');
-} catch (_) {
+} catch (carrierErr) {
+  console.error('[CRITICAL] carrier_webhook_dispatcher failed to load — failing closed:', carrierErr.message);
   carrierWebhookDispatcher = {
-    dispatchFnolWebhook: async (payload) => ({ ok: true, status: 'DISPATCHED', record_type: 'Preliminary', payload }),
-    ingestHumanCall: (payload) => ({ ok: true, status: 'INGESTED_AND_AUDITED', record_type: 'Preliminary', payload })
+    dispatchFnolWebhook: async (payload) => ({
+      ok: false,
+      status: 'CARRIER_WEBHOOK_UNAVAILABLE_HUMAN_ESCALATION',
+      requires_human_escalation: true,
+      record_type: 'Preliminary',
+      error: 'CARRIER_DISPATCHER_LOAD_FAILED',
+      payload
+    }),
+    ingestHumanCall: (payload) => ({
+      ok: false,
+      status: 'CARRIER_INGEST_UNAVAILABLE',
+      requires_human_escalation: true,
+      record_type: 'Preliminary',
+      error: 'CARRIER_DISPATCHER_LOAD_FAILED',
+      payload
+    })
   };
 }
 const { AudioTokenLatencyHardener } = safeRequire('./audio_token_latency_hardener', { AudioTokenLatencyHardener: class { constructor() {} processInboundPayload(p, fn) { return { downstreamResult: fn ? fn(Buffer.from(p, 'base64')) : {} }; } flush() {} getMetrics() { return {}; } } });
@@ -433,10 +448,16 @@ const TENANT_HMAC_MASTER_SECRET = process.env.TENANT_HMAC_MASTER_SECRET || (IS_P
 const TENANT_HMAC_MAX_SKEW_MS = 5 * 60 * 1000;
 
 function deriveTenantHmacSecret(tenantId) {
+  if (!TENANT_HMAC_MASTER_SECRET || TENANT_HMAC_MASTER_SECRET.length < 16) {
+    throw new Error('ERR_TENANT_HMAC_MASTER_SECRET_UNCONFIGURED');
+  }
   return crypto.createHmac('sha256', TENANT_HMAC_MASTER_SECRET).update(String(tenantId || '')).digest('hex');
 }
 
 function verifyTenantHmacRequest(req, rawBody) {
+  if (!TENANT_HMAC_MASTER_SECRET || TENANT_HMAC_MASTER_SECRET.length < 16) {
+    return { ok: false, status: 503, error: 'ERR_TENANT_HMAC_MASTER_SECRET_UNCONFIGURED' };
+  }
   const tenantId = String(req.headers['x-tenant-id'] || '').trim();
   const timestamp = String(req.headers['x-tenant-timestamp'] || '').trim();
   const signature = String(req.headers['x-tenant-signature'] || '').trim();
@@ -3816,29 +3837,49 @@ const server = http.createServer((req, res) => {
     }));
   }
 
-  // Gate 10: Immediate Operator Kill-Switch & One-Shop Pilot Metrics Endpoint
+  // Gate 10: Immediate Operator Kill-Switch & One-Shop Pilot Metrics Endpoint (Authenticated & Disk-Durable)
   if (parsedUrl.pathname === '/api/pilot/kill-switch') {
+    const ksFile = path.join(TRANSCRIPT_DIR, 'pilot_kill_switch.json');
+    const readKillSwitchState = () => {
+      if (process.env.PILOT_KILL_SWITCH_ACTIVE === 'true') return true;
+      if (typeof global.__PILOT_KILL_SWITCH_ACTIVE === 'boolean') return global.__PILOT_KILL_SWITCH_ACTIVE;
+      try {
+        if (fs.existsSync(ksFile)) {
+          const parsed = JSON.parse(fs.readFileSync(ksFile, 'utf8'));
+          return Boolean(parsed && parsed.killSwitchActive);
+        }
+      } catch (_) {}
+      return false;
+    };
     if (req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({
         ok: true,
-        killSwitchActive: Boolean(global.__PILOT_KILL_SWITCH_ACTIVE || process.env.PILOT_KILL_SWITCH_ACTIVE === 'true'),
-        fallbackHumanNumber: process.env.PILOT_HUMAN_FALLBACK_NUMBER || '+19723099156'
+        killSwitchActive: readKillSwitchState(),
+        fallbackHumanNumber: process.env.PILOT_HUMAN_FALLBACK_NUMBER || null
       }));
     }
     if (req.method === 'POST') {
+      if (!isAxirateAuthorized(req)) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ ok: false, error: 'Unauthorized: Bearer admin token required to toggle pilot kill switch' }));
+      }
       let body = '';
       req.on('data', c => { body += c.toString(); });
       req.on('end', () => {
         try {
           const payload = body ? JSON.parse(body) : {};
-          global.__PILOT_KILL_SWITCH_ACTIVE = Boolean(payload.active !== undefined ? payload.active : true);
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({
-            ok: true,
-            killSwitchActive: global.__PILOT_KILL_SWITCH_ACTIVE,
+          const nextState = Boolean(payload.active !== undefined ? payload.active : true);
+          global.__PILOT_KILL_SWITCH_ACTIVE = nextState;
+          const record = {
+            killSwitchActive: nextState,
+            reason: String(payload.reason || 'operator_command').slice(0, 200),
             updatedAt: new Date().toISOString()
-          }));
+          };
+          fs.mkdirSync(path.dirname(ksFile), { recursive: true });
+          fs.writeFileSync(ksFile, JSON.stringify(record, null, 2), 'utf8');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify(Object.assign({ ok: true }, record)));
         } catch (e) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           return res.end(JSON.stringify({ ok: false, error: e.message }));
@@ -3855,12 +3896,47 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       const data = querystring.parse(body);
       const dialStatus = String(data.DialCallStatus || data.reason || 'no-answer').toLowerCase();
-      const fallbackPhone = process.env.PILOT_HUMAN_FALLBACK_NUMBER || '+19723099156';
-      const msg = `Our on-call line reported status ${dialStatus.replace(/[^a-z-]/g, '')}. We have flagged your callback number for immediate human follow-up by our on-call supervisor.`;
+      // If the human representative answered and completed the call, end cleanly without failure prompt
+      if (dialStatus === 'completed' || dialStatus === 'answered') {
+        res.writeHead(200, { 'Content-Type': 'text/xml' });
+        return res.end('<?xml version="1.0" encoding="UTF-8"?>\n<Response/>');
+      }
+      const backupHumanPhone = process.env.PILOT_HUMAN_BACKUP_NUMBER || '';
+      const alreadyRetried = parsedUrl.query && parsedUrl.query.retry === '1';
+      if (backupHumanPhone && !alreadyRetried && (dialStatus === 'busy' || dialStatus === 'no-answer' || dialStatus === 'failed')) {
+        const retryTwiml = '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n' +
+          '  <Say voice="' + VOICE_BY_LANG.en.agent + '">Our primary on-call line is busy. Trying our backup human representative now.</Say>\n' +
+          '  <Dial timeout="20" action="/voice/transfer-status?retry=1">' + escapeXml(backupHumanPhone) + '</Dial>\n' +
+          '</Response>';
+        res.writeHead(200, { 'Content-Type': 'text/xml' });
+        return res.end(retryTwiml);
+      }
+      // Persist durable priority callback task before promising callback to caller
+      let callbackPersisted = false;
+      try {
+        const cbPath = path.join(TRANSCRIPT_DIR, 'priority_human_callbacks.jsonl');
+        fs.mkdirSync(path.dirname(cbPath), { recursive: true });
+        const cbEntry = {
+          id: 'CB-' + Date.now(),
+          callSid: data.CallSid || null,
+          from: data.From || null,
+          to: data.To || null,
+          failureCondition: dialStatus,
+          status: 'PENDING_IMMEDIATE_HUMAN_CALLBACK',
+          createdAt: new Date().toISOString()
+        };
+        fs.appendFileSync(cbPath, JSON.stringify(cbEntry) + '\n', 'utf8');
+        callbackPersisted = true;
+      } catch (cbErr) {
+        console.error('[TRANSFER CALLBACK PERSIST ERROR]', cbErr.message);
+      }
+      const msg = callbackPersisted
+        ? `Our on-call representative was unreachable (${dialStatus.replace(/[^a-z-]/g, '')}). Your callback number has been logged in our priority human callback queue for follow-up.`
+        : `Our on-call representative is currently unavailable. Please call back or dial 911 if you have an immediate life-safety emergency.`;
       const twiml = '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n' +
         '  <Say voice="' + VOICE_BY_LANG.en.agent + '">' + escapeXml(msg) + '</Say>\n' +
         '  <Hangup/>\n</Response>';
-      console.log('[TRANSFER FAILURE MATRIX] DialCallStatus=' + dialStatus + ' fallback=' + fallbackPhone);
+      console.log('[TRANSFER FAILURE MATRIX] DialCallStatus=' + dialStatus + ' callbackPersisted=' + callbackPersisted);
       res.writeHead(200, { 'Content-Type': 'text/xml' });
       return res.end(twiml);
     });

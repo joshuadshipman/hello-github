@@ -43,7 +43,7 @@ const COPY = {
 
 const RX = {
   injury: /\b(hurt|injur(?:ed|y|ies)|bleeding|unconscious|neck|back pain|broken|can'?t move|ambulance|herid[oa]s?|sangrando|inconsciente|lastimad[oa]|ambulancia|dolor)\b/i,
-  hazard: /\b(smok(?:e|ing)|on fire|fire|flames?|burning|trapped|pinned|leaking (?:gas|fuel)|fuel leak|gas leak|humo|echando humo|en llamas|fuego|incendi(?:o|ando)|atrapad[oa]|fuga de (?:gas|gasolina))\b/i,
+  hazard: /\b(smok(?:e|ing)|on fire|fire|flames?|burning|trapped|pinned|unconscious|can'?t breathe|cannot breathe|not breathing|bleeding heavily|leaking (?:gas|fuel)|fuel leak|gas leak|humo|echando humo|en llamas|fuego|incendi(?:o|ando)|atrapad[oa]|inconsciente|no puedo respirar|no respira|sangrando mucho|fuga de (?:gas|gasolina))\b/i,
   explicitEmergency: /\b(emergency|911|nine one one|emergencia)\b/i,
   severe: /\b(badly|severe(?:ly)?|serious(?:ly)?|a lot of blood|can'?t breathe|grave|mucha sangre)\b/i,
   minor: /(\bi(?:'m| am) (?:only )?(?:1[0-7]|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen)(?: years?(?: old)?)?\b|\bi(?:'m| am) (?:a )?minor\b|\bi(?:'m| am) under (?:18|eighteen)\b|\bi(?:'m| am) (?:just )?a kid\b|\btengo (?:1[0-7]|diez|once|doce|trece|catorce|quince|diecis[eé]is|diecisiete) a[ñn]os\b|\bsoy menor(?: de edad)?\b)/i,

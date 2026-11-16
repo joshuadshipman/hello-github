@@ -3057,20 +3057,24 @@ class ClaimsIntakeEngine {
       session.slotFailures = session.slotFailures || {};
       session.slotFailures[answeringSlot] = (session.slotFailures[answeringSlot] || 0) + 1;
       if (session.slotFailures[answeringSlot] >= 2 && !session.offeredAlternativeSlot) {
-        session.offeredAlternativeSlot = answeringSlot;
-        let altText = '';
-        if (answeringSlot === 'policyNumber') {
-          altText = lang === 'es'
-            ? `Veo que el número de póliza es difícil de capturar por voz. No hay problema — puedo buscarlo con su número de teléfono celular o enviarle un enlace seguro por texto para escribirlo en pantalla. ¿Qué prefiere?`
-            : `I notice we're having trouble catching the policy number over the phone. No problem — I can look it up using your mobile phone number, or text you a secure link so you can type it on screen. Which do you prefer?`;
+        if (answeringSlot === 'timeOfLoss') {
+          session.fnolData.dateOfLoss = lang === 'es' ? 'Hoy' : 'Today';
         } else {
-          altText = lang === 'es'
-            ? `Para asegurarnos de completar su reporte al 100% sin demoras, le estoy enviando un enlace seguro a su celular para ingresar este dato y subir fotos en pantalla.`
-            : `To make sure we get 100% of your report completed without friction, I am texting a secure link to your mobile phone right now so you can complete this detail on screen.`;
-          session.pivotedToSms = true;
+          session.offeredAlternativeSlot = answeringSlot;
+          let altText = '';
+          if (answeringSlot === 'policyNumber') {
+            altText = lang === 'es'
+              ? `Veo que el número de póliza es difícil de capturar por voz. No hay problema — puedo buscarlo con su número de teléfono celular o enviarle un enlace seguro por texto para escribirlo en pantalla. ¿Qué prefiere?`
+              : `I notice we're having trouble catching the policy number over the phone. No problem — I can look it up using your mobile phone number, or text you a secure link so you can type it on screen. Which do you prefer?`;
+          } else {
+            altText = lang === 'es'
+              ? `Para asegurarnos de completar su reporte al 100% sin demoras, le estoy enviando un enlace seguro a su celular para ingresar este dato y subir fotos en pantalla.`
+              : `To make sure we get 100% of your report completed without friction, I am texting a secure link to your mobile phone right now so you can complete this detail on screen.`;
+            session.pivotedToSms = true;
+          }
+          session.transcript += '\nAI Agent Angel: ' + altText;
+          return { speechChunks: [{ voice: 'agent', text: altText }], isFinal: session.pivotedToSms, triggerSms: session.pivotedToSms };
         }
-        session.transcript += '\nAI Agent Angel: ' + altText;
-        return { speechChunks: [{ voice: 'agent', text: altText }], isFinal: session.pivotedToSms, triggerSms: session.pivotedToSms };
       }
     }
 
@@ -3345,7 +3349,7 @@ class ClaimsIntakeEngine {
         const combinedDateTime = [data.dateOfLoss, data.timeOfLoss && data.timeOfLoss !== data.dateOfLoss ? data.timeOfLoss : null].filter(Boolean).join(' at ');
         const cleanSummaryVehicle = String(data.vehicleInfo || (lang === 'es' ? 'vehículo asegurado' : 'insured vehicle')).replace(/^(?:your|my|the|su)\s+/i, '').trim();
         const policyStatusStr = data.policyNumber
-          ? (lang === 'es' ? `bajo la póliza ${data.policyNumber}` : `under policy ${data.policyNumber}`)
+          ? (lang === 'es' ? ` bajo la póliza ${data.policyNumber}` : ` under policy ${data.policyNumber}`)
           : '';
         const isParkedUnoccupiedWeather = ['flood', 'hail', 'fallingobject', 'glass'].includes(session.lossType) &&
           (data.injuryStatus === null || data.injuryStatus === undefined || data.injuryStatus === 'N/A (Not Asked — Parked/Unoccupied)') &&
@@ -3855,7 +3859,8 @@ class ClaimsIntakeEngine {
         }
         if (!data.dateOfLoss && !data.timeOfLoss) {
           const cleanedDate = text.replace(/\b\d{2,}\b(?!\s*(?:st|nd|rd|th|am|pm|a\.m\.|p\.m\.|days?|hours?|minutes?|\d))/gi, '').replace(/[.,;\s]+$/, '').trim();
-          if (cleanedDate && cleanedDate.length >= 3) {
+          const hasTemporalSignal = /\b(today|yesterday|tonight|night|morning|afternoon|evening|noon|midnight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|week|days?|hours?|minutes?|ago|last|this|early|late|hoy|ayer|anoche|mañana|tarde|noche|lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|semana|mes|hace|\d)\b/i.test(cleanedDate);
+          if (cleanedDate && cleanedDate.length >= 3 && hasTemporalSignal) {
             data.dateOfLoss = cleanedDate;
           }
         }

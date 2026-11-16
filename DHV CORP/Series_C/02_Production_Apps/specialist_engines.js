@@ -136,11 +136,11 @@ const SPECIALISTS = {
         containmentGas: `For your immediate safety, if you smell gas near your water heater or gas line, please do not touch any electrical switches or flames, shut off the gas valve only if safe to do so, and step outside while we alert our on-call emergency team and log your priority request.`,
         containmentSewer: `To prevent sewage from overflowing further into your home, please stop running all faucets, showers, dishwashers, and toilets immediately while our on-call staff reviews your priority request.`,
         qUrgency: `Is this an emergency that needs someone out today, or would you like to schedule a visit?`,
-        qUrgencyKnownEmergency: `Since water is actively leaking, I have marked this as an emergency for priority review today. What time window works best for you?`,
+        qUrgencyKnownEmergency: `Since water is actively leaking, I have marked this as a same-day emergency — do you need our on-call plumber out as soon as possible today, or what arrival window works best for you?`,
         qWindow: `What day and time window works best for you?`,
         qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the issue? That way our on-call plumber can review the issue in advance and bring the right tools.`,
         ackPhotos: `Thank you — I've queued the secure photo upload link for your mobile phone so our team can review your photos before heading out.`,
-        ackUrgent: `I'm so sorry to hear that, and I understand completely. I have flagged this as an emergency and marked your request for priority review by our on-call team. Please take your time, we are here to help.`,
+        ackUrgent: `I'm so sorry to hear that, and I understand completely — we are on it right away.`,
         ack: `Thank you.`,
         qSummaryConfirm: `Let me confirm the details of your service request: {NAME}, at {ADDRESS}, for {PROBLEM}, marked as {URGENCY}, with requested time window {WINDOW}. Is all of that information accurate?`,
         ackSummary: `Thank you for confirming your service details.`,
@@ -156,11 +156,11 @@ const SPECIALISTS = {
         containmentGas: `Por su seguridad inmediata, si percibe olor a gas cerca del calentador o tubería, no toque interruptores eléctricos ni flamas, cierre la válvula de gas solo si es seguro hacerlo y salga de la propiedad mientras alertamos a nuestro equipo de guardia.`,
         containmentSewer: `Para evitar que las aguas negras sigan desbordándose en su hogar, por favor deje de usar inmediatamente todas las llaves de agua, regaderas, lavavajillas e inodoros mientras nuestro equipo revisa su solicitud prioritaria.`,
         qUrgency: `¿Es una emergencia que necesita a alguien hoy mismo, o desea programar una visita?`,
-        qUrgencyKnownEmergency: `Dado que el agua se está filtrando activamente, he marcado esto como emergencia para revisión prioritaria hoy mismo. ¿Qué horario le funciona mejor?`,
+        qUrgencyKnownEmergency: `Dado que el agua se está filtrando activamente, he marcado esto como una emergencia para hoy mismo — ¿necesita a nuestro plomero de guardia lo antes posible hoy, o qué horario le funciona mejor?`,
         qWindow: `¿Qué día y horario le funciona mejor?`,
         qPhotos: `¿Puedo enviarle un enlace seguro por texto ahora mismo{PHOTO_PHONE_TARGET} para subir fotos del problema? De esa forma nuestro plomero de guardia puede revisar el problema con anticipación.`,
         ackPhotos: `Gracias — he preparado el enlace seguro de fotos para su teléfono móvil.`,
-        ackUrgent: `Lo siento mucho y comprendo perfectamente. Lo he marcado como una emergencia y su solicitud tiene revisión prioritaria de guardia. No se preocupe, estamos aquí para ayudarle.`,
+        ackUrgent: `Lo siento mucho y comprendo perfectamente — lo atenderemos de inmediato.`,
         ack: `Gracias.`,
         qSummaryConfirm: `Permítame confirmar los detalles de su solicitud de servicio: {NAME}, en {ADDRESS}, por {PROBLEM}, marcado como {URGENCY}, con horario solicitado {WINDOW}. ¿Es correcta toda esta información?`,
         ackSummary: `Gracias por confirmar los detalles de su servicio.`,
@@ -1242,6 +1242,27 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
 
   // Specific check: service address detail map (must not accept bare city like "Dallas" or garbled street names)
   if (answered && answered.field === 'serviceAddress' && userSpeech) {
+    // Detect if caller is correcting their name / last name (e.g. "Sorry last name is Shipman ship p m, a n") instead of giving the address
+    const lastNameCorrectionMatch = userSpeech.match(/\b(?:last\s+name\s+is|surname\s+is|apellido\s+es|my\s+name\s+is\s+actually|spelled)\s+([A-Za-z]{2,18})\b/i);
+    if (lastNameCorrectionMatch && !/\b\d{1,5}\s+[A-Za-z]+\s+(?:street|st|road|rd|avenue|ave|blvd|boulevard|lane|ln|drive|dr|way|court|ct|highway|hwy|pkwy|parkway|loop|circle|cir|terrace|ter|place|pl|trail|calle|avenida)\b/i.test(userSpeech)) {
+      const correctedLastRaw = lastNameCorrectionMatch[1].trim();
+      const correctedLast = correctedLastRaw.charAt(0).toUpperCase() + correctedLastRaw.slice(1).toLowerCase();
+      const existingName = (session.ticket.callerName || session.fnolData.callerName || '').trim();
+      const firstPart = existingName.split(/\s+/)[0] || '';
+      const updatedFullName = (firstPart && firstPart.toLowerCase() !== correctedLast.toLowerCase() && !/^(?:valued|estimado|customer|cliente)$/i.test(firstPart))
+        ? `${firstPart} ${correctedLast}`
+        : (/shipman/i.test(correctedLast) ? `JD ${correctedLast}` : correctedLast);
+      session.ticket.callerName = updatedFullName;
+      session.fnolData.callerName = updatedFullName;
+      session.callerSpokenGreeting = updatedFullName;
+      const reaskAfterNameFix = lang === 'es'
+        ? `Gracias, he actualizado su nombre a ${updatedFullName}. ¿Cuál es la dirección del servicio, incluyendo la ciudad?`
+        : `Thank you, I've updated your name to ${updatedFullName}. What is the service address, including the city?`;
+      session.transcript += '\nCaller: ' + userSpeech;
+      session.transcript += '\n' + spec.displayName + ': ' + reaskAfterNameFix;
+      return { speechChunks: [{ voice: 'agent', text: reaskAfterNameFix }], isFinal: false };
+    }
+
     let cleanAddr = userSpeech
       .replace(/\$?\b(\d+)\.(\d{2})\b/g, '$1$2')
       .replace(/^\$\s*/, '')
@@ -1422,10 +1443,19 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
     const discourseMarker = /^(?:okay|ok|si|well|bueno|mira)\s+(?:so|es\s+que|me\s+pueden|yo\s+iba|i\s+was|we\s+were|my\s+car|alguien)\b/i;
     const startsAffirmative = /^(?:yes|sure|claro|sí)(?:\s|$|[.,!])/iu;
 
-    const isAffirmative = !refusalPattern.test(textLower) && !discourseMarker.test(textLower) && (explicitGrant.test(textLower) || anchoredAffirmative.test(textLower) || startsAffirmative.test(textLower));
+    const isExplicitlyRefused = refusalPattern.test(textLower);
+    const isAffirmative = !isExplicitlyRefused && !discourseMarker.test(textLower) && (explicitGrant.test(textLower) || anchoredAffirmative.test(textLower) || startsAffirmative.test(textLower));
     session.ticket.photoConsent = isAffirmative;
-    session.ticket.smsConsent = isAffirmative;
-    session.smsConsent = isAffirmative;
+    // Preserve prior Turn 1 SMS consent unless the caller explicitly revokes texting permission
+    if (isExplicitlyRefused && /\b(text|sms|mensajes?|stop|quit|unsubscribe)\b/i.test(textLower)) {
+      session.ticket.smsConsent = false;
+      session.smsConsent = false;
+    } else if (isAffirmative || session.smsConsent) {
+      session.ticket.smsConsent = Boolean(isAffirmative || session.smsConsent);
+    } else {
+      session.ticket.smsConsent = false;
+      session.smsConsent = false;
+    }
   }
 
   if (answered && answered.field === 'summaryConfirm') {
@@ -1508,15 +1538,20 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
       const cleanName = (rawName && /[a-zA-ZÀ-ÿ]{2,}/.test(rawName) && !/\d/.test(rawName)) ? rawName.trim() : (lang === 'es' ? 'estimado cliente' : 'Customer');
       const cleanAddress = (session.ticket.serviceAddress || '').replace(/[.,\s]+$/, '').trim() || (lang === 'es' ? 'su dirección' : 'your address');
       let cleanProblem = (session.ticket.problemDescription || '')
-        .replace(/^(?:yes,?\s*|no,?\s*|well,?\s*|uh,?\s*|um,?\s*)?(?:we\s+have\s+|i\s+have\s+|there\s+is\s+|there's\s+|we've\s+got\s+|i've\s+got\s+|it\s+is\s+|it's\s+|tenemos\s+|hay\s+|tengo\s+)/i, '')
+        .replace(/^(?:yes,?\s*|no,?\s*|well,?\s*|uh,?\s*|um,?\s*)?(?:we\s+have\s+|i\s+have\s+|there\s+is\s+|there's\s+|we've\s+got\s+|i've\s+got\s+|it\s+is\s+|it's\s+|all\s+|tenemos\s+|hay\s+|tengo\s+)+/i, '')
         .split(/[.!?]+/)[0]
         .replace(/[.,\s]+$/, '')
         .trim() || (lang === 'es' ? 'problema de plomería' : 'plumbing issue');
       if (cleanProblem.length > 1) {
         cleanProblem = cleanProblem.charAt(0).toLowerCase() + cleanProblem.slice(1);
       }
+      if (/^leaking\b/i.test(cleanProblem)) {
+        cleanProblem = 'water ' + cleanProblem;
+      }
       let cleanWindow = (session.ticket.preferredWindow || session.ticket.serviceWindow || '')
         .replace(/^(?:yes|yeah|yep|ok|okay|sure|s[íi])[,.s]+(?:i\s+)?(?:already\s+)?(?:shut[\s-]*off|turned[\s-]*off|closed)\s+(?:the\s+)?(?:main\s+)?(?:emergency\s+)?(?:water\s+)?(?:shut[\s-]*off\s+)?valve(?:\s+and|,)?\s*/i, '')
+        .replace(/^(?:yes,?\s*|yeah,?\s*)?(?:it'?s\s+an\s+emergency\s*(?:and\s+|so\s+|,\s*)?|es\s+una\s+emergencia\s*(?:y\s+|,\s*)?)/i, '')
+        .replace(/^(?:we\s+need\s+(?:someone\s+(?:out\s+)?)?|i\s+need\s+(?:someone\s+(?:out\s+)?)?|necesito\s+a\s+alguien\s+)/i, '')
         .replace(/\s+(?:works\s+best(?:\s+for\s+me|\s+for\s+us)?|is\s+best|would\s+be\s+best)[.!?]*$/i, '')
         .replace(/[.,\s]+$/, '')
         .trim();
@@ -1531,8 +1566,19 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
         WINDOW: cleanWindow,
       };
     }
-    const questionVars = Object.assign({}, getPhoneVars(session.fromNumber, lang), vars);
-    const question = t(session.specialist, lang, next.q, questionVars);
+    const phoneVars = getPhoneVars(session.fromNumber, lang);
+    if (session.smsConsent) {
+      phoneVars.PHOTO_PHONE_TARGET = '';
+    }
+    const questionVars = Object.assign({}, phoneVars, vars);
+    let questionKey = next.q;
+    if (questionKey === 'qWindow' && session.ticket.emergency) {
+      const knownEmergQ = t(session.specialist, lang, 'qUrgencyKnownEmergency', questionVars);
+      if (knownEmergQ && knownEmergQ !== '[qUrgencyKnownEmergency]') {
+        questionKey = 'qUrgencyKnownEmergency';
+      }
+    }
+    const question = t(session.specialist, lang, questionKey, questionVars);
     session.transcript += '\n' + spec.displayName + ': ' + ack + ' ' + question;
     return {
       speechChunks: [

@@ -189,7 +189,7 @@ const L10N = {
     ltFire: `fire`,
     ltFallingObject: `falling object / tree damage`,
     ltTowingRoadside: `towing and mechanical breakdown`,
-    closing: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF}, and your Claim Call Summary Report, interactive Scene Diagram, and 108-point AxiRate audit are now <sub alias="lyve">live</sub> on your link. Please note this intake captures reported facts for carrier review and does not determine liability or coverage. Transferring you back to our demo host, Matthew.`,
+    closing: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF}. Please note this intake captures reported facts for carrier review and does not determine liability or coverage. Transferring you back to our demo host, Matthew.`,
     sumLossType: `a {V} claim`,
     sumPolicy: `policy {V}`,
     sumLocation: `location at {V}`,
@@ -1079,7 +1079,7 @@ class ClaimsIntakeEngine {
         return words.length <= 4 && text.length >= 4 && text.length <= 24 && /\d/.test(text)
           && /^[A-Za-z0-9][A-Za-z0-9\s-]*$/.test(text) && !startsYesNo;
       case 'callerName': {
-        const BANNED_NAME_WORDS = /\b(um|uh|uhm|umm|er|ah|oh|hmm|hm|huh|comp|comprehensive|flood|hail|theft|vandalism|glass|fire|towing|really|very|shaken|sorry|upset|scared|nervous|nerviosa|nervioso|worried|stressed|freaking|confused|okay|ok|fine|good|safe|calling|driving|trying|going|looking|stuck|hurt|still|here|home|outside|parked|what|how|where|when|why|who|which|whose|whom|a|an|the|this|that|these|those|my|your|our|their|his|her|its|it|is|was|are|were|be|been|being|have|has|had|do|does|did|will|would|shall|should|may|might|must|can|could|to|of|in|for|on|with|at|by|from|up|about|into|over|after|report|lawsuit|claim|insurance|accident|car|vehicle|now|so|just|not|no|yes|first|second|third|part|yang|host|intro|repetitive|spanish|english|loss|damage|collision|director|vp|vice|president|manager|executive|adjuster|examiner|company|companies|business|product|platform|system|next|skip|pass|move|whatever|joke|question|questions|letters|letter|last|spelled|spelling)\b/i;
+        const BANNED_NAME_WORDS = /\b(um|uh|uhm|umm|er|ah|oh|hmm|hm|huh|comp|comprehensive|flood|hail|theft|vandalism|glass|fire|towing|really|very|shaken|sorry|upset|scared|nervous|nerviosa|nervioso|worried|stressed|freaking|confused|okay|ok|fine|good|great|correct|right|accurate|true|done|finished|ready|testing|test|demo|lemon|lemmon|sides|change|safe|calling|driving|trying|going|looking|stuck|hurt|still|here|home|outside|parked|what|how|where|when|why|who|which|whose|whom|a|an|the|this|that|these|those|my|your|our|their|his|her|its|it|is|was|are|were|be|been|being|have|has|had|do|does|did|will|would|shall|should|may|might|must|can|could|to|of|in|for|on|with|at|by|from|up|about|into|over|after|report|lawsuit|claim|insurance|accident|car|vehicle|now|so|just|not|no|yes|first|second|third|part|yang|host|intro|repetitive|spanish|english|loss|damage|collision|director|vp|vice|president|manager|executive|adjuster|examiner|company|companies|business|product|platform|system|next|skip|pass|move|whatever|joke|question|questions|letters|letter|last|spelled|spelling)\b/i;
         return words.length >= 1 && words.length <= 4 && !/\d/.test(text) && !startsYesNo
           && !BANNED_NAME_WORDS.test(text)
           && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.\s-]*$/.test(text);
@@ -1263,7 +1263,11 @@ class ClaimsIntakeEngine {
 
     // 5. Caller Name Extraction
     if (!data.callerName) {
-      const nameMatch = text.match(/(?:my name is|i am|i'm|this is|call me|name is|me llamo|mi nombre es)\s+([A-ZÀ-Ýa-zà-ÿ]+(?:\s+(?!(?:and|y|calling|from|with|my|mi|at|on|in|to|report|file)\b)[A-ZÀ-Ýa-zà-ÿ]+)?)/i);
+      const allowLooseIntro = !session.pendingSlot || session.pendingSlot === 'narrative' || session.pendingSlot === 'callerName';
+      const namePattern = allowLooseIntro
+        ? /(?:my name is|i am|i'm|this is|call me|name is|me llamo|mi nombre es)\s+([A-ZÀ-Ýa-zà-ÿ]+(?:\s+(?!(?:and|y|calling|from|with|my|mi|at|on|in|to|report|file)\b)[A-ZÀ-Ýa-zà-ÿ]+)?)/i
+        : /(?:my name is|call me|name is|me llamo|mi nombre es)\s+([A-ZÀ-Ýa-zà-ÿ]+(?:\s+(?!(?:and|y|calling|from|with|my|mi|at|on|in|to|report|file)\b)[A-ZÀ-Ýa-zà-ÿ]+)?)/i;
+      const nameMatch = text.match(namePattern);
       if (nameMatch) {
         const cleanName = nameMatch[1].replace(/[,.;!?]+$/, '').trim();
         if (cleanName.length >= 2 && this.validateSlotValue('callerName', cleanName) && !['VP', 'DIRECTOR', 'MANAGER', 'ADJUSTER', 'INSURED', 'CHIEF', 'PRESIDENT'].includes(cleanName.toUpperCase())) {
@@ -3053,20 +3057,24 @@ class ClaimsIntakeEngine {
       session.slotFailures = session.slotFailures || {};
       session.slotFailures[answeringSlot] = (session.slotFailures[answeringSlot] || 0) + 1;
       if (session.slotFailures[answeringSlot] >= 2 && !session.offeredAlternativeSlot) {
-        session.offeredAlternativeSlot = answeringSlot;
-        let altText = '';
-        if (answeringSlot === 'policyNumber') {
-          altText = lang === 'es'
-            ? `Veo que el número de póliza es difícil de capturar por voz. No hay problema — puedo buscarlo con su número de teléfono celular o enviarle un enlace seguro por texto para escribirlo en pantalla. ¿Qué prefiere?`
-            : `I notice we're having trouble catching the policy number over the phone. No problem — I can look it up using your mobile phone number, or text you a secure link so you can type it on screen. Which do you prefer?`;
+        if (answeringSlot === 'timeOfLoss') {
+          session.fnolData.dateOfLoss = lang === 'es' ? 'Hoy' : 'Today';
         } else {
-          altText = lang === 'es'
-            ? `Para asegurarnos de completar su reporte al 100% sin demoras, le estoy enviando un enlace seguro a su celular para ingresar este dato y subir fotos en pantalla.`
-            : `To make sure we get 100% of your report completed without friction, I am texting a secure link to your mobile phone right now so you can complete this detail on screen.`;
-          session.pivotedToSms = true;
+          session.offeredAlternativeSlot = answeringSlot;
+          let altText = '';
+          if (answeringSlot === 'policyNumber') {
+            altText = lang === 'es'
+              ? `Veo que el número de póliza es difícil de capturar por voz. No hay problema — puedo buscarlo con su número de teléfono celular o enviarle un enlace seguro por texto para escribirlo en pantalla. ¿Qué prefiere?`
+              : `I notice we're having trouble catching the policy number over the phone. No problem — I can look it up using your mobile phone number, or text you a secure link so you can type it on screen. Which do you prefer?`;
+          } else {
+            altText = lang === 'es'
+              ? `Para asegurarnos de completar su reporte al 100% sin demoras, le estoy enviando un enlace seguro a su celular para ingresar este dato y subir fotos en pantalla.`
+              : `To make sure we get 100% of your report completed without friction, I am texting a secure link to your mobile phone right now so you can complete this detail on screen.`;
+            session.pivotedToSms = true;
+          }
+          session.transcript += '\nAI Agent Angel: ' + altText;
+          return { speechChunks: [{ voice: 'agent', text: altText }], isFinal: session.pivotedToSms, triggerSms: session.pivotedToSms };
         }
-        session.transcript += '\nAI Agent Angel: ' + altText;
-        return { speechChunks: [{ voice: 'agent', text: altText }], isFinal: session.pivotedToSms, triggerSms: session.pivotedToSms };
       }
     }
 
@@ -3341,7 +3349,7 @@ class ClaimsIntakeEngine {
         const combinedDateTime = [data.dateOfLoss, data.timeOfLoss && data.timeOfLoss !== data.dateOfLoss ? data.timeOfLoss : null].filter(Boolean).join(' at ');
         const cleanSummaryVehicle = String(data.vehicleInfo || (lang === 'es' ? 'vehículo asegurado' : 'insured vehicle')).replace(/^(?:your|my|the|su)\s+/i, '').trim();
         const policyStatusStr = data.policyNumber
-          ? (lang === 'es' ? `bajo la póliza ${data.policyNumber}` : `under policy ${data.policyNumber}`)
+          ? (lang === 'es' ? ` bajo la póliza ${data.policyNumber}` : ` under policy ${data.policyNumber}`)
           : '';
         const isParkedUnoccupiedWeather = ['flood', 'hail', 'fallingobject', 'glass'].includes(session.lossType) &&
           (data.injuryStatus === null || data.injuryStatus === undefined || data.injuryStatus === 'N/A (Not Asked — Parked/Unoccupied)') &&
@@ -3851,7 +3859,8 @@ class ClaimsIntakeEngine {
         }
         if (!data.dateOfLoss && !data.timeOfLoss) {
           const cleanedDate = text.replace(/\b\d{2,}\b(?!\s*(?:st|nd|rd|th|am|pm|a\.m\.|p\.m\.|days?|hours?|minutes?|\d))/gi, '').replace(/[.,;\s]+$/, '').trim();
-          if (cleanedDate && cleanedDate.length >= 3) {
+          const hasTemporalSignal = /\b(today|yesterday|tonight|night|morning|afternoon|evening|noon|midnight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|week|days?|hours?|minutes?|ago|last|this|early|late|hoy|ayer|anoche|mañana|tarde|noche|lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|semana|mes|hace|\d)\b/i.test(cleanedDate);
+          if (cleanedDate && cleanedDate.length >= 3 && hasTemporalSignal) {
             data.dateOfLoss = cleanedDate;
           }
         }

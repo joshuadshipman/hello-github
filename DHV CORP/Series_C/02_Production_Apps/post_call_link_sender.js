@@ -185,10 +185,13 @@ function checkSmsComplianceGate(to, opts = {}) {
   }
   try {
     const smsOutbound = require('./sms_outbound_sender');
-    if (smsOutbound && typeof smsOutbound.checkQuietHours === 'function' && opts.enforceQuietHours === true) {
-      const qh = smsOutbound.checkQuietHours({ now: opts.now, timezoneOffsetHours: opts.timezoneOffsetHours });
-      if (qh && qh.isQuietHours) {
-        return { allowed: false, reason: 'QUIET_HOURS_SUPPRESSED' };
+    if (smsOutbound && typeof smsOutbound.checkQuietHours === 'function' && opts.enforceQuietHours !== false) {
+      const qh = smsOutbound.checkQuietHours({
+        now: opts.now,
+        recipientTimezone: opts.recipientTimezone || opts.timezone || 'America/Chicago'
+      });
+      if (qh && (qh.isQuietHours === true || qh.allowed === false)) {
+        return { allowed: false, reason: qh.reason || 'QUIET_HOURS_SUPPRESSED' };
       }
     }
   } catch (_) {}
@@ -480,8 +483,12 @@ async function sendPostCallLink({ record, link, transcriptDir, fromNumber } = {}
         if (smsTo && (smsTo === sendingNum || smsTo.endsWith('9166767'))) {
           sendingNum = process.env.TWILIO_PHONE_NUMBER_972 || '+19723099156';
         }
-        const tw = await sendSmsViaTwilio({ to: smsTo, from: sendingNum, body: msgs.sms });
-        result.sms = { status: 'ACCEPTED_BY_TWILIO', sent: true, messageSid: tw.sid || null, note: 'accepted by API; delivery still depends on carrier/A2P' };
+        const tw = await sendSmsViaTwilio({ to: smsTo, from: sendingNum, body: msgs.sms, transcriptDir, enforceQuietHours: false });
+        if (!tw || !tw.sid) {
+          result.sms = { status: 'FAILED_NO_MESSAGE_SID', sent: false, messageSid: null };
+        } else {
+          result.sms = { status: 'ACCEPTED_BY_TWILIO', sent: true, messageSid: tw.sid, note: 'accepted by API; delivery still depends on carrier/A2P' };
+        }
         console.log('[POSTCALL SMS ACCEPTED] ' + result.callSid + ' -> ' + smsTo + ' (msg ' + (tw.sid || '?') + ')');
       } catch (e) {
         result.sms = { status: 'FAILED', sent: false, error: errText(e) };
