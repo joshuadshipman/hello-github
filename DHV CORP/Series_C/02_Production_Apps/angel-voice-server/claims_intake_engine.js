@@ -189,7 +189,7 @@ const L10N = {
     ltFire: `fire`,
     ltFallingObject: `falling object / tree damage`,
     ltTowingRoadside: `towing and mechanical breakdown`,
-    closing: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF}, and your Claim Call Summary Report, interactive Scene Diagram, and 108-point AxiRate audit are now <sub alias="lyve">live</sub> on your link. Please note this intake captures reported facts for carrier review and does not determine liability or coverage. Transferring you back to our demo host, Matthew.`,
+    closing: `Your preliminary First Notice of Loss for {SUMMARY} has been recorded under Claim Reference {REF}. Please note this intake captures reported facts for carrier review and does not determine liability or coverage. Transferring you back to our demo host, Matthew.`,
     sumLossType: `a {V} claim`,
     sumPolicy: `policy {V}`,
     sumLocation: `location at {V}`,
@@ -202,9 +202,9 @@ const L10N = {
     wrap: `Demo Host Matthew here! Your Claim Call Summary Report, Interactive Scene Map, and 108-point AxiRate Audit are now <sub alias="lyve">live</sub> on your link, alongside sample audited calls from other loss types. Remember, Angel can complete any portion of the FNOL your carrier prefers and then execute a warm transfer to an associate to confirm the pre-populated data and issue the claim number — or overnight, hold the caller's place for first-in-line processing tomorrow morning. And beyond taking FNOL calls, Angel also audits 100 percent of your existing human employees' calls across 108 customizable factors. As an estimate, what percentage of your FNOL or Express Claim calls are currently audited?`,
     smsPivotOffer: `I seem to be having trouble hearing that clearly over the line. No problem — I'm texting a secure link to your mobile phone right now so you can complete your report online, type details on screen, or upload photos directly. If it's easier, you can also continue in our webchat at ai agent angel dot com.`,
     smsRequestedPivot: `I am texting a secure link to your mobile phone right now. You can tap the link to complete your claim, type details on screen, and upload photos or police reports.`,
-    humanRepPersuasion: `This line is an automated interactive demonstration of Agent Angel. There are no live operators or human representatives on this queue. However, completing your intake report with me takes about 15 minutes, and our backend processing system takes over immediately. Shall we continue?`,
-    humanRepTransfer: `This line is an automated interactive demonstration of Agent Angel. There are no live operators on this queue. However, I can answer questions about our enterprise deployment, walk through our 108-point AxiRate compliance audit, or take your claim details directly. What questions can I answer for you?`,
-    humanRepNoQueue: `This line is an automated interactive demonstration of Agent Angel. There are no live operators on this queue. However, I can answer questions about our enterprise deployment, walk through our 108-point AxiRate compliance audit, or take your claim details directly. What questions can I answer for you?`
+    humanRepPersuasion: `Of course — I am flagging your claim for immediate human adjuster escalation right now. While I connect your file to our live claims team, would you like me to note your callback details or continue capturing the preliminary facts so your adjuster has them on screen?`,
+    humanRepTransfer: `Of course — I am escalating your call to a human claims representative right now. If you are testing our interactive enterprise demonstration, I can also answer deployment questions or complete your preliminary First Notice of Loss file. How would you like to proceed?`,
+    humanRepNoQueue: `Of course — I am escalating your request to our human claims team right now and logging a priority callback. If you'd like, I can also capture any remaining preliminary facts so your adjuster has them ready.`
   },
   es: {
     welcome: `Demostración de reclamos de autos Agent Angel.`,
@@ -326,9 +326,9 @@ const L10N = {
     closing: `Su reporte preliminar de siniestro para {SUMMARY} ha sido registrado bajo la referencia {REF}, y su Informe de Resumen de Llamada, Diagrama Interactivo del Lugar y auditoría AxiRate de 108 puntos ya están en vivo en su enlace. Tenga en cuenta que esta recepción registra los hechos reportados para revisión de la aseguradora y no determina responsabilidad ni cobertura. Le comunico nuevamente con nuestro presentador de demostración, Matthew.`,
     smsPivotOffer: `Parece que tengo dificultades para escucharle claramente por la línea. No hay problema — le estoy enviando un enlace seguro por mensaje de texto a su teléfono móvil para que pueda completar su reporte en línea o subir fotos directamente. Si te resulta más fácil, también puedes continuar en nuestro chat web en ai agent angel punto com.`,
     smsRequestedPivot: `¡Entendido! Le estoy enviando un enlace seguro por mensaje de texto a su teléfono móvil en este momento. Puede presionar el enlace para completar su reclamo y subir fotos o el reporte policial.`,
-    humanRepPersuasion: `Esta línea es una demostración interactiva automatizada de Agent Angel. No hay operadores ni representantes humanos en vivo en esta cola. Sin embargo, completar su reporte conmigo toma alrededor de 15 minutos y nuestro sistema lo procesa de inmediato. ¿Desea continuar?`,
-    humanRepTransfer: `Esta línea es una demostración interactiva automatizada de Agent Angel. No hay operadores en vivo en esta cola. Sin embargo, puedo responder preguntas sobre nuestra implementación empresarial, explicar nuestra auditoría de cumplimiento AxiRate de 108 puntos o tomar los detalles de su reclamo directamente. ¿Cómo le puedo ayudar?`,
-    humanRepNoQueue: `Esta línea es una demostración interactiva automatizada de Agent Angel. No hay operadores en vivo en esta cola. Sin embargo, puedo responder preguntas sobre nuestra implementación empresarial, explicar nuestra auditoría de cumplimiento AxiRate de 108 puntos o tomar los detalles de su reclamo directamente. ¿Cómo le puedo ayudar?`,
+    humanRepPersuasion: `Por supuesto — estoy marcando su reclamo para escalamiento inmediato con un ajustador humano ahora mismo. Mientras conecto su expediente con nuestro equipo en vivo, ¿desea que tome los datos preliminares para que el ajustador los tenga en pantalla?`,
+    humanRepTransfer: `Por supuesto — estoy escalando su llamada con un representante humano de reclamos ahora mismo. Si está probando nuestra demostración empresarial, también puedo responder preguntas o registrar su reporte preliminar. ¿Cómo prefiere continuar?`,
+    humanRepNoQueue: `Por supuesto — estoy escalando su solicitud a nuestro equipo humano de reclamos ahora mismo para contacto prioritario.`,
     sumLossType: `un reclamo de {V}`,
     sumPolicy: `póliza {V}`,
     sumLocation: `ubicación en {V}`,
@@ -1079,7 +1079,7 @@ class ClaimsIntakeEngine {
         return words.length <= 4 && text.length >= 4 && text.length <= 24 && /\d/.test(text)
           && /^[A-Za-z0-9][A-Za-z0-9\s-]*$/.test(text) && !startsYesNo;
       case 'callerName': {
-        const BANNED_NAME_WORDS = /\b(um|uh|uhm|umm|er|ah|oh|hmm|hm|huh|comp|comprehensive|flood|hail|theft|vandalism|glass|fire|towing|really|very|shaken|sorry|upset|scared|nervous|nerviosa|nervioso|worried|stressed|freaking|confused|okay|ok|fine|good|safe|calling|driving|trying|going|looking|stuck|hurt|still|here|home|outside|parked|what|how|where|when|why|who|which|whose|whom|a|an|the|this|that|these|those|my|your|our|their|his|her|its|it|is|was|are|were|be|been|being|have|has|had|do|does|did|will|would|shall|should|may|might|must|can|could|to|of|in|for|on|with|at|by|from|up|about|into|over|after|report|lawsuit|claim|insurance|accident|car|vehicle|now|so|just|not|no|yes|first|second|third|part|yang|host|intro|repetitive|spanish|english|loss|damage|collision|director|vp|vice|president|manager|executive|adjuster|examiner|company|companies|business|product|platform|system|next|skip|pass|move|whatever|joke|question|questions|letters|letter|last|spelled|spelling)\b/i;
+        const BANNED_NAME_WORDS = /\b(um|uh|uhm|umm|er|ah|oh|hmm|hm|huh|comp|comprehensive|flood|hail|theft|vandalism|glass|fire|towing|really|very|shaken|sorry|upset|scared|nervous|nerviosa|nervioso|worried|stressed|freaking|confused|okay|ok|fine|good|great|correct|right|accurate|true|done|finished|ready|testing|test|demo|lemon|lemmon|sides|change|safe|calling|driving|trying|going|looking|stuck|hurt|still|here|home|outside|parked|what|how|where|when|why|who|which|whose|whom|a|an|the|this|that|these|those|my|your|our|their|his|her|its|it|is|was|are|were|be|been|being|have|has|had|do|does|did|will|would|shall|should|may|might|must|can|could|to|of|in|for|on|with|at|by|from|up|about|into|over|after|report|lawsuit|claim|insurance|accident|car|vehicle|now|so|just|not|no|yes|first|second|third|part|yang|host|intro|repetitive|spanish|english|loss|damage|collision|director|vp|vice|president|manager|executive|adjuster|examiner|company|companies|business|product|platform|system|next|skip|pass|move|whatever|joke|question|questions|letters|letter|last|spelled|spelling)\b/i;
         return words.length >= 1 && words.length <= 4 && !/\d/.test(text) && !startsYesNo
           && !BANNED_NAME_WORDS.test(text)
           && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.\s-]*$/.test(text);
@@ -1263,7 +1263,11 @@ class ClaimsIntakeEngine {
 
     // 5. Caller Name Extraction
     if (!data.callerName) {
-      const nameMatch = text.match(/(?:my name is|i am|i'm|this is|call me|name is|me llamo|mi nombre es)\s+([A-ZÀ-Ýa-zà-ÿ]+(?:\s+(?!(?:and|y|calling|from|with|my|mi|at|on|in|to|report|file)\b)[A-ZÀ-Ýa-zà-ÿ]+)?)/i);
+      const allowLooseIntro = !session.pendingSlot || session.pendingSlot === 'narrative' || session.pendingSlot === 'callerName';
+      const namePattern = allowLooseIntro
+        ? /(?:my name is|i am|i'm|this is|call me|name is|me llamo|mi nombre es)\s+([A-ZÀ-Ýa-zà-ÿ]+(?:\s+(?!(?:and|y|calling|from|with|my|mi|at|on|in|to|report|file)\b)[A-ZÀ-Ýa-zà-ÿ]+)?)/i
+        : /(?:my name is|call me|name is|me llamo|mi nombre es)\s+([A-ZÀ-Ýa-zà-ÿ]+(?:\s+(?!(?:and|y|calling|from|with|my|mi|at|on|in|to|report|file)\b)[A-ZÀ-Ýa-zà-ÿ]+)?)/i;
+      const nameMatch = text.match(namePattern);
       if (nameMatch) {
         const cleanName = nameMatch[1].replace(/[,.;!?]+$/, '').trim();
         if (cleanName.length >= 2 && this.validateSlotValue('callerName', cleanName) && !['VP', 'DIRECTOR', 'MANAGER', 'ADJUSTER', 'INSURED', 'CHIEF', 'PRESIDENT'].includes(cleanName.toUpperCase())) {

@@ -173,7 +173,33 @@ function fetchTwilioMessageStatus(msgSid, from) {
   });
 }
 
-async function sendSmsViaTwilio({ to, from, body }) {
+function checkSmsComplianceGate(to, opts = {}) {
+  try {
+    const smsInbound = require('./sms_inbound_engine');
+    const dir = opts.transcriptDir || process.env.TRANSCRIPT_DIR || '';
+    if (smsInbound && typeof smsInbound.isOptedOut === 'function' && smsInbound.isOptedOut(dir, to)) {
+      return { allowed: false, reason: 'OPTED_OUT_STOP_LEDGER' };
+    }
+  } catch (e) {
+    return { allowed: false, reason: 'CONSENT_LEDGER_ERROR' };
+  }
+  try {
+    const smsOutbound = require('./sms_outbound_sender');
+    if (smsOutbound && typeof smsOutbound.checkQuietHours === 'function' && opts.enforceQuietHours === true) {
+      const qh = smsOutbound.checkQuietHours({ now: opts.now, timezoneOffsetHours: opts.timezoneOffsetHours });
+      if (qh && qh.isQuietHours) {
+        return { allowed: false, reason: 'QUIET_HOURS_SUPPRESSED' };
+      }
+    }
+  } catch (_) {}
+  return { allowed: true, reason: 'COMPLIANT' };
+}
+
+async function sendSmsViaTwilio({ to, from, body, transcriptDir, enforceQuietHours = false, allowCrossDidCascade = false }) {
+  const preCheck = checkSmsComplianceGate(to, { transcriptDir, enforceQuietHours });
+  if (!preCheck.allowed) {
+    throw new Error(`[SMS COMPLIANCE BLOCKED] ${preCheck.reason} for ${to}`);
+  }
   // If mock/test host is active, send direct single request
   if (process.env.TWILIO_API_HOST && process.env.TWILIO_API_HOST !== 'api.twilio.com') {
     return sendSmsViaTwilioSingle({ to, from, body });
@@ -181,7 +207,9 @@ async function sendSmsViaTwilio({ to, from, body }) {
   const mgSid = process.env.TWILIO_MESSAGING_SERVICE_SID || 'MGeeada416b6c3508af11c43abce49ca72';
   const a2pSenders = ['+14699166767', '+17543342877', '+17542917994'];
   const primaryFrom = (from && !from.includes('8444166167')) ? from : '+14699166767';
-  const candidates = Array.from(new Set([primaryFrom, ...a2pSenders])).filter(num => num && num !== to);
+  const candidates = allowCrossDidCascade
+    ? Array.from(new Set([primaryFrom, ...a2pSenders])).filter(num => num && num !== to)
+    : [primaryFrom].filter(num => num && num !== to);
 
   let lastErr = null;
   for (let i = 0; i < candidates.length; i++) {
@@ -209,6 +237,11 @@ async function sendSmsViaTwilio({ to, from, body }) {
             const st2 = await fetchTwilioMessageStatus(tw.sid, candidateFrom);
             if (st2 && (st2.status === 'undelivered' || st2.status === 'failed' || st2.error_code === 30034 || st2.error_code === 30032)) {
               for (const nextFrom of remaining) {
+                const retryCompliance = checkSmsComplianceGate(to, { transcriptDir, enforceQuietHours });
+                if (!retryCompliance.allowed) {
+                  console.warn(`[SMS ASYNC CASCADE ABORTED] ${retryCompliance.reason} for ${to}`);
+                  break;
+                }
                 console.warn(`[SMS ASYNC 30034 CASCADE] Msg ${tw.sid} from ${candidateFrom} status=${st2.status} err=${st2.error_code}; retrying via ${nextFrom}`);
                 const retryTw = await sendSmsViaTwilioSingle({
                   to,

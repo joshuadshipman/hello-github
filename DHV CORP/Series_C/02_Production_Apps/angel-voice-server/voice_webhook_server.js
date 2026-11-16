@@ -74,10 +74,22 @@ const secondListenerRagEngine = require('./second_listener_rag_engine');
 let fsmPlumbingDispatchAdapter;
 try {
   fsmPlumbingDispatchAdapter = require('./fsm_plumbing_dispatch_adapter');
-} catch (_) {
+} catch (adapterErr) {
+  console.error('[CRITICAL] fsm_plumbing_dispatch_adapter failed to load — failing closed:', adapterErr.message);
   fsmPlumbingDispatchAdapter = {
-    dispatch: (target, job) => ({ target, dispatch_id: 'mock', slot_verified: true, customer_sms_confirmation: true, payload: job }),
-    verifySlot: () => ({ ok: true }),
+    dispatch: (target, job) => ({
+      ok: false,
+      target,
+      dispatch_id: null,
+      state: 'DISPATCH_UNAVAILABLE_HUMAN_ESCALATION',
+      slot_verified: false,
+      technician_assigned: false,
+      customer_sms_confirmation: false,
+      requires_human_escalation: true,
+      error: 'ADAPTER_LOAD_FAILED',
+      payload: job
+    }),
+    verifySlot: () => ({ ok: false, slot_verified: false, state: 'DISPATCH_UNAVAILABLE_HUMAN_ESCALATION' }),
     FSM_TARGETS: ['jobber', 'housecall_pro', 'servicetitan', 'calendar_sms']
   };
 }
@@ -241,7 +253,7 @@ function normalizeE164(p) {
 const DID_MAP = Object.freeze({
   '+14699166767': Object.freeze({ specialist: 'claims', subMode: 'claims', mode: 'intake', purpose: 'claims_intake' }),     // Auto Claims Specialist — FROZEN (JD 2026-08-19)
   '+19723099156': Object.freeze({ specialist: 'cos_hermes', subMode: 'cos_hermes', mode: 'assistant', purpose: 'cos_intake' }), // Hermes chief-of-staff line
-  '+17543342877': Object.freeze({ specialist: 'plumbing', subMode: 'plumbing', mode: 'sales', purpose: 'trade_sales' }),       // TRADES-DID-WIRE-01 Plumbing intake + sales
+  '+17543342877': Object.freeze({ specialist: 'plumbing', subMode: 'plumbing', mode: 'intake', purpose: 'trade_intake' }),     // TRADES-DID-WIRE-01 Plumbing emergency & service intake default
   '+17542917994': Object.freeze({ specialist: 'hvac', subMode: 'hvac', mode: 'intake', purpose: 'trade_intake' }),          // TRADES-DID-WIRE-01
   '+18444166167': Object.freeze({ specialist: 'roofing', subMode: 'roofing', mode: 'intake', purpose: 'trade_intake' }),       // TRADES-DID-WIRE-01 (toll-free)
 });
@@ -305,7 +317,8 @@ function resolveSpecialist(toNumber, query) {
       // Fail loud, serve right: the DID owns the persona; log the misconfig.
       console.error('[SPECROUTE MISMATCH] To=' + toNumber + ' (' + normTo + ') is ' + route.specialist + ' but query says "' + q + '" — DID wins (one-number-per-specialist).');
     }
-    return { ...route, subMode: route.subMode || route.specialist, directEmergencyAnswer: route.specialist === 'plumbing', zeroGenericMenu: true, routeDid: normTo };
+    const effectiveMode = (SALES_ALIASES[qMode] || qMode === 'sales') && route.specialist !== 'claims' && route.specialist !== 'cos_hermes' ? 'sales' : route.mode;
+    return { ...route, mode: effectiveMode, subMode: route.subMode || route.specialist, directEmergencyAnswer: route.specialist === 'plumbing', zeroGenericMenu: true, routeDid: normTo };
   }
   // If toNumber is provided but unknown in DID_MAP: fail loud, never silent fallback
   if (toNumber && normTo) {
@@ -398,10 +411,12 @@ function getStateComplianceRule(stateCode = 'TX') {
 }
 
 // ── SC-CLAIMS-AXIRATE-AUDIT-P0-02: PII Redaction & Auth Gate on /axirate/calls & /api/axirate/calls ──
-const AXIRATE_ADMIN_TOKEN = process.env.AXIRATE_ADMIN_TOKEN || 'axirate-enterprise-admin-token-2026';
+const IS_PRODUCTION_RUNTIME = process.env.NODE_ENV === 'production' || Boolean(process.env.K_SERVICE);
+const EPHEMERAL_DEV_ADMIN_TOKEN = crypto.randomBytes(24).toString('hex');
+const AXIRATE_ADMIN_TOKEN = process.env.AXIRATE_ADMIN_TOKEN || (IS_PRODUCTION_RUNTIME ? '' : EPHEMERAL_DEV_ADMIN_TOKEN);
 
 function isAxirateAuthorized(req) {
-  if (!req || !req.headers) return false;
+  if (!req || !req.headers || !AXIRATE_ADMIN_TOKEN) return false;
   const authHeader = String(req.headers['authorization'] || '').trim();
   const xToken = String(req.headers['x-axirate-token'] || '').trim();
   if (authHeader.startsWith('Bearer ')) {
@@ -413,9 +428,8 @@ function isAxirateAuthorized(req) {
 }
 
 // GOLIVE-P2-SERVER-WIRE-EXIF-DISPATCH-FLEET-01: per-tenant HMAC isolation for production engine routes.
-// Each tenant's signing secret is derived from a master secret so no per-tenant secret table is needed;
-// a caller must hold the master secret (ops-only) to derive a valid tenant secret to hand to that tenant.
-const TENANT_HMAC_MASTER_SECRET = process.env.TENANT_HMAC_MASTER_SECRET || 'axirate-tenant-hmac-master-2026';
+const EPHEMERAL_DEV_HMAC_SECRET = crypto.randomBytes(32).toString('hex');
+const TENANT_HMAC_MASTER_SECRET = process.env.TENANT_HMAC_MASTER_SECRET || (IS_PRODUCTION_RUNTIME ? '' : EPHEMERAL_DEV_HMAC_SECRET);
 const TENANT_HMAC_MAX_SKEW_MS = 5 * 60 * 1000;
 
 function deriveTenantHmacSecret(tenantId) {
@@ -3784,18 +3798,73 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && parsedUrl.pathname === '/health') {
+  if (req.method === 'GET' && (parsedUrl.pathname === '/health' || parsedUrl.pathname === '/healthz')) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({
       status: 'HEALTHY',
       number: ROUTED_NUMBER,
+      plumbing_did: '+17543342877',
+      gitSha: process.env.GIT_SHA || process.env.COMMIT_SHA || 'HEAD',
+      serviceRevision: process.env.K_REVISION || process.env.SERVICE_REVISION || 'local-dev',
+      pilotKillSwitch: Boolean(global.__PILOT_KILL_SWITCH_ACTIVE || process.env.PILOT_KILL_SWITCH_ACTIVE === 'true'),
       voice_agent: VOICE_AGENT,
       voice_narrator: VOICE_NARRATOR,
       active_sessions: activeSessions.size,
       state_compliance_loaded: Boolean(STATE_COMPLIANCE_MATRIX),
       default_state_rule: Boolean(getStateComplianceRule('TX')),
-      version: '4.0.0-sales-demo-20pillars'
+      version: '4.1.0-audit-remediated'
     }));
+  }
+
+  // Gate 10: Immediate Operator Kill-Switch & One-Shop Pilot Metrics Endpoint
+  if (parsedUrl.pathname === '/api/pilot/kill-switch') {
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        ok: true,
+        killSwitchActive: Boolean(global.__PILOT_KILL_SWITCH_ACTIVE || process.env.PILOT_KILL_SWITCH_ACTIVE === 'true'),
+        fallbackHumanNumber: process.env.PILOT_HUMAN_FALLBACK_NUMBER || '+19723099156'
+      }));
+    }
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', c => { body += c.toString(); });
+      req.on('end', () => {
+        try {
+          const payload = body ? JSON.parse(body) : {};
+          global.__PILOT_KILL_SWITCH_ACTIVE = Boolean(payload.active !== undefined ? payload.active : true);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({
+            ok: true,
+            killSwitchActive: global.__PILOT_KILL_SWITCH_ACTIVE,
+            updatedAt: new Date().toISOString()
+          }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
+      });
+      return;
+    }
+  }
+
+  // Gate 5: Transfer & Failure Matrix Endpoint (busy, no-answer, after-hours, bad_audio, tool_timeout, crm_webhook_failure)
+  if (req.method === 'POST' && parsedUrl.pathname === '/voice/transfer-status') {
+    let body = '';
+    req.on('data', c => { body += c.toString(); });
+    req.on('end', () => {
+      const data = querystring.parse(body);
+      const dialStatus = String(data.DialCallStatus || data.reason || 'no-answer').toLowerCase();
+      const fallbackPhone = process.env.PILOT_HUMAN_FALLBACK_NUMBER || '+19723099156';
+      const msg = `Our on-call line reported status ${dialStatus.replace(/[^a-z-]/g, '')}. We have flagged your callback number for immediate human follow-up by our on-call supervisor.`;
+      const twiml = '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n' +
+        '  <Say voice="' + VOICE_BY_LANG.en.agent + '">' + escapeXml(msg) + '</Say>\n' +
+        '  <Hangup/>\n</Response>';
+      console.log('[TRANSFER FAILURE MATRIX] DialCallStatus=' + dialStatus + ' fallback=' + fallbackPhone);
+      res.writeHead(200, { 'Content-Type': 'text/xml' });
+      return res.end(twiml);
+    });
+    return;
   }
 
   if (req.method === 'GET' && parsedUrl.pathname === '/api/voice/qos-telemetry') {
@@ -4138,6 +4207,15 @@ const server = http.createServer((req, res) => {
       }
 
       const callSid = data.CallSid || 'MOCK-CALL-' + Date.now();
+      if (global.__PILOT_KILL_SWITCH_ACTIVE || process.env.PILOT_KILL_SWITCH_ACTIVE === 'true') {
+        const fallbackPhone = process.env.PILOT_HUMAN_FALLBACK_NUMBER || '+19723099156';
+        const bypassTwiml = '<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n' +
+          '  <Say voice="' + VOICE_BY_LANG.en.agent + '">Connecting you directly to our on-call team now.</Say>\n' +
+          '  <Dial timeout="20" action="/voice/transfer-status">' + escapeXml(fallbackPhone) + '</Dial>\n' +
+          '</Response>';
+        res.writeHead(200, { 'Content-Type': 'text/xml' });
+        return res.end(bypassTwiml);
+      }
       const rawSpeech = data.SpeechResult || '';
       const rawDigits = data.Digits || '';
       const speechConfidence = (data.Confidence !== undefined && data.Confidence !== '') ? parseFloat(data.Confidence) : null;

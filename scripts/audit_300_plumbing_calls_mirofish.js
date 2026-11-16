@@ -1,18 +1,20 @@
 /**
  * audit_300_plumbing_calls_mirofish.js
  * ==============================================================================
- * Comprehensive Mirofish Performance & Quality Audit Across 300 Plumbing Calls
+ * Comprehensive Mirofish 5-Pillar & AI vs. Human Speech Audit Across 300 Plumbing Calls
  * ==============================================================================
- * Evaluates all 300 calls in the Plumbing test batch against the 5 Mirofish Pillars:
+ * Evaluates all 300 calls in the Plumbing test batch against:
  * 1. Intake Accuracy & Core Competency (Emergency triage, hazard containment, slot capture)
  * 2. Active Empathy & Jargon Control (Calming distressed homeowner, zero robotic script loops)
- * 3. Consultative Flow & Pacing (<800ms latency, clear explanation of next steps)
- * 4. Value-Driven Lead Capture & Conversion (SMS booking link, photo upload consent)
- * 5. Defect Elimination (Zero bad data, address normalization, ASR clarification)
+ * 3. Consultative Flow & Pacing (Clear explanation of next steps, natural human cadence)
+ * 4. Value-Driven Lead Capture & Conversion (SMS photo upload consent, preliminary ticket state)
+ * 5. AI vs. Human Speech Truthfulness & Safety Gate (Zero false dispatch/ETA claims, zero
+ *    robotic filler, dry-area electrical safety qualifier on shutoffs, human escalation readiness)
  *
- * Generates:
- * - Master 300-call ledger in plumbing_300_call_pack/plumbing_300_mirofish_master_ledger.json
- * - Executive summary report in Executive_Briefings/JDS/PLUMBING_300_CALLS_MIROFISH_AUDIT_REPORT.md
+ * NOTE ON EVIDENCE CLASSIFICATION (Gate 7 Honesty):
+ * This harness executes deterministic multi-turn text evaluation against the live
+ * `specialist_engines.js` + `plumbing_intake_engine.js` state machine. It is recorded
+ * explicitly as `DETERMINISTIC_ENGINE_STATE_AND_SPEECH_EVALUATION` (not claimed as a live PSTN recording).
  */
 
 'use strict';
@@ -22,6 +24,7 @@ process.env.SKIP_ARCHIVE_DISK_IO = 'true';
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PROD_APPS_DIR = path.join(REPO_ROOT, 'DHV CORP', 'Series_C', '02_Production_Apps');
@@ -29,6 +32,11 @@ const PLUMBING_PACK_DIR = path.join(PROD_APPS_DIR, 'plumbing_300_call_pack');
 const LEDGER_PATH = path.join(PLUMBING_PACK_DIR, 'plumbing_300_mirofish_master_ledger.json');
 const REPORT_DIR = path.join(REPO_ROOT, 'DHV CORP', 'Executive_Briefings', 'JDS');
 const REPORT_PATH = path.join(REPORT_DIR, 'PLUMBING_300_CALLS_MIROFISH_AUDIT_REPORT.md');
+
+let currentGitSha = 'unknown';
+try {
+  currentGitSha = execSync('git rev-parse HEAD', { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+} catch (_) {}
 
 const { build300PlumbingCalls } = require(path.join(PLUMBING_PACK_DIR, 'plumbing_300_validator.js'));
 const specialistEngines = require(path.join(PROD_APPS_DIR, 'specialist_engines.js'));
@@ -39,14 +47,25 @@ if (!fs.existsSync(REPORT_DIR)) {
 }
 
 console.log('================================================================');
-console.log('  STARTING MIROFISH 5-PILLAR AUDIT ACROSS 300 PLUMBING CALLS');
+console.log('  STARTING MIROFISH 5-PILLAR & AI-VS-HUMAN SPEECH AUDIT (300 CALLS)');
+console.log(`  Pinned Commit SHA: ${currentGitSha}`);
 console.log('================================================================\n');
 
 const calls = build300PlumbingCalls();
 console.log(`Loaded ${calls.length} calls from Plumbing 300 pack. Beginning Mirofish evaluation...\n`);
 
+// Prohibited AI slop / false-confidence speech patterns (Gate 2, Gate 3, AI vs Human Speech)
+const PROHIBITED_SPEECH_PATTERNS = [
+  { id: 'FALSE_DISPATCH_ETA', re: /\b(technician is on the way|while we dispatch an emergency technician|until our technician arrives|before our technician arrives)\b/i },
+  { id: 'NO_LIVE_HUMANS_REFUSAL', re: /\bno\s+(?:<[^>]+>)?live(?:<\/[^>]+>)?\s+human\s+operators\b/i },
+  { id: 'ROBOTIC_GOT_IT_UNDERSTOOD', re: /\bGot it,\s*understood\b/i },
+  { id: 'HOMEOWNER_DEMO_HOST_LEAK', re: /\bDemo Host Matthew\b|\bTransferring you over to Matthew\b/i }
+];
+
 const results = [];
 let totalScore = 0;
+let speechTruthPassCount = 0;
+let speechViolationsTotal = 0;
 const bandCounts = { EXCELLENT: 0, STRONG: 0, ACCEPTABLE: 0, NEEDS_OPTIMIZATION: 0, FAIL: 0 };
 const categoryTotals = {
   intakeAccuracy: 0,
@@ -62,7 +81,6 @@ for (let i = 0; i < calls.length; i++) {
   const call = calls[i];
   const lang = call.language || 'en';
 
-  // 1. Run live plumbing state machine
   const session = specialistEngines.createSession('plumbing', {
     fromNumber: call.fromNumber,
     callSid: call.id,
@@ -71,10 +89,12 @@ for (let i = 0; i < calls.length; i++) {
   });
 
   let transcript = '';
-  // Initial greeting
+  const agentUtterances = [];
   const greetingRes = specialistEngines.evaluateTurn(session, '');
   if (greetingRes && Array.isArray(greetingRes.speechChunks)) {
-    transcript += `Agent Angel (Plumbing): ${greetingRes.speechChunks.map(c => c.text).join(' ')}\n`;
+    const gText = greetingRes.speechChunks.map(c => c.text).join(' ');
+    transcript += `Agent Angel (Plumbing): ${gText}\n`;
+    agentUtterances.push(gText);
   }
 
   for (const customerTurn of call.turns) {
@@ -84,13 +104,27 @@ for (let i = 0; i < calls.length; i++) {
       if (res && Array.isArray(res.speechChunks)) {
         const spoken = res.speechChunks.map(c => c.text).join(' ');
         transcript += `Agent Angel (Plumbing): ${spoken}\n`;
+        agentUtterances.push(spoken);
       }
     } catch (e) {
       transcript += `Agent Angel (Plumbing): [Engine Error: ${e.message}]\n`;
     }
   }
 
-  // 2. Build standardized call record for Mirofish Analyzer
+  // AI vs. Human Speech Truthfulness & Naturalness Check
+  const combinedAgentSpeech = agentUtterances.join(' ');
+  const callViolations = [];
+  for (const rule of PROHIBITED_SPEECH_PATTERNS) {
+    if (rule.re.test(combinedAgentSpeech)) {
+      callViolations.push(rule.id);
+    }
+  }
+  if (callViolations.length === 0) {
+    speechTruthPassCount++;
+  } else {
+    speechViolationsTotal += callViolations.length;
+  }
+
   const callRecord = {
     callSid: call.id,
     callerRole: 'HOMEOWNER',
@@ -116,12 +150,10 @@ for (let i = 0; i < calls.length; i++) {
     }
   };
 
-  // 3. Analyze with Mirofish 5-Pillar Analyzer
   const audit = analyzeDemoCall(callRecord);
   const score = audit ? audit.overallMirofishScore : 0;
   totalScore += score;
 
-  // Track categories
   if (audit && audit.categoryScores) {
     categoryTotals.intakeAccuracy += audit.categoryScores.intakeAccuracy || 0;
     categoryTotals.empathyAndTone += audit.categoryScores.empathyAndTone || 0;
@@ -130,7 +162,6 @@ for (let i = 0; i < calls.length; i++) {
     categoryTotals.leadCaptureAndConversion += audit.categoryScores.leadCaptureAndConversion || 0;
   }
 
-  // Determine band
   const band = audit ? audit.ratingBand : (score >= 90 ? 'EXCELLENT' : score >= 80 ? 'STRONG' : score >= 70 ? 'ACCEPTABLE' : 'NEEDS_OPTIMIZATION');
   if (bandCounts[band] !== undefined) {
     bandCounts[band]++;
@@ -138,7 +169,6 @@ for (let i = 0; i < calls.length; i++) {
     bandCounts.NEEDS_OPTIMIZATION++;
   }
 
-  // Track group stats
   if (!groupScores[call.group]) {
     groupScores[call.group] = { total: 0, count: 0, scores: [] };
   }
@@ -152,13 +182,16 @@ for (let i = 0; i < calls.length; i++) {
     language: lang,
     score: score,
     band: band,
+    dispatchState: session.ticket?.dispatchState || 'REQUEST_CAPTURED',
+    speechTruthPassed: callViolations.length === 0,
+    speechViolations: callViolations,
     breakdown: audit ? audit.categoryScores : {},
     strengths: audit ? audit.whatWentWell : [],
     recommendations: audit ? audit.recommendedBotFixes : []
   });
 
   if ((i + 1) % 50 === 0 || i === calls.length - 1) {
-    console.log(`  Processed ${i + 1}/${calls.length} calls | Current Avg Score: ${(totalScore / (i + 1)).toFixed(2)}/100`);
+    console.log(`  Processed ${i + 1}/${calls.length} calls | Avg Score: ${(totalScore / (i + 1)).toFixed(2)}/100 | Speech Truth: ${speechTruthPassCount}/${i + 1}`);
   }
 }
 
@@ -169,13 +202,16 @@ const avgPitch = Number((categoryTotals.consultativePitch / calls.length).toFixe
 const avgObjections = Number((categoryTotals.objectionHandling / calls.length).toFixed(2));
 const avgLeadCapture = Number((categoryTotals.leadCaptureAndConversion / calls.length).toFixed(2));
 
-// Save master ledger
 const ledger = {
   pack: 'PLUMBING_300_CALL_REALISTIC_PACK_V1',
   auditType: 'MIROFISH_5_PILLAR_PERFORMANCE_AUDIT',
+  evidenceClassification: 'DETERMINISTIC_ENGINE_STATE_AND_SPEECH_EVALUATION',
+  commitSha: currentGitSha,
   auditedAt: new Date().toISOString(),
   totalCalls: calls.length,
   averageScore: avgOverall,
+  speechTruthPassCount,
+  speechViolationsTotal,
   bandDistribution: bandCounts,
   pillarAverages: {
     intakeAccuracy: avgIntake,
@@ -195,13 +231,14 @@ const ledger = {
 fs.writeFileSync(LEDGER_PATH, JSON.stringify(ledger, null, 2), 'utf8');
 console.log(`\n  Master Mirofish Ledger written to: ${LEDGER_PATH}`);
 
-// Generate executive report
-let reportMd = `# Plumbing 300-Call Mirofish Performance & Quality Audit Report\n\n`;
+let reportMd = `# Plumbing 300-Call Mirofish Performance & AI-vs-Human Speech Audit Report\n\n`;
 reportMd += `**Audit Date:** ${new Date().toISOString()}  \n`;
-reportMd += `**Engine:** \`DHV CORP/Series_C/02_Production_Apps/mirofish_demo_analyzer.js\`  \n`;
-reportMd += `**Target:** 300 Real-World Multi-Turn Plumbing Emergency & Service Calls  \n`;
+reportMd += `**Pinned Commit SHA:** \`${currentGitSha}\`  \n`;
+reportMd += `**Evidence Type:** \`DETERMINISTIC_ENGINE_STATE_AND_SPEECH_EVALUATION\` (300 multi-turn state-machine transcripts)  \n`;
+reportMd += `**Engine:** \`DHV CORP/Series_C/02_Production_Apps/mirofish_demo_analyzer.js\` + \`specialist_engines.js\`  \n`;
 reportMd += `**Dedicated DID Tested:** \`+1 (754) 334-2877\`  \n`;
-reportMd += `**Overall Score:** **${avgOverall}/100** (Band: ${avgOverall >= 90 ? 'EXCELLENT' : avgOverall >= 80 ? 'STRONG' : 'ACCEPTABLE'})  \n\n`;
+reportMd += `**Overall Mirofish Score:** **${avgOverall}/100**  \n`;
+reportMd += `**AI vs. Human Speech Truthfulness Pass Rate:** **${speechTruthPassCount}/${calls.length}** (${speechViolationsTotal} violations)  \n\n`;
 
 reportMd += `## 1. Executive Summary & Scorecard\n\n`;
 reportMd += `| Mirofish Pillar | Target Floor | Achieved Score | Status |\n`;
@@ -210,16 +247,11 @@ reportMd += `| **Pillar 1: Intake Accuracy & Slot Capture** | ≥ 80.0 | **${avg
 reportMd += `| **Pillar 2: Empathy, Active Listening & Tone** | ≥ 80.0 | **${avgEmpathy}** | ${avgEmpathy >= 80 ? 'PASS ✅' : 'FLAG ⚠️'} |\n`;
 reportMd += `| **Pillar 3: Consultative Flow & Pacing** | ≥ 70.0 | **${avgPitch}** | ${avgPitch >= 70 ? 'PASS ✅' : 'FLAG ⚠️'} |\n`;
 reportMd += `| **Pillar 4: Objection & Friction Handling** | ≥ 80.0 | **${avgObjections}** | ${avgObjections >= 80 ? 'PASS ✅' : 'FLAG ⚠️'} |\n`;
-reportMd += `| **Pillar 5: Lead Capture & Instant SMS Booking** | ≥ 80.0 | **${avgLeadCapture}** | ${avgLeadCapture >= 80 ? 'PASS ✅' : 'FLAG ⚠️'} |\n`;
-reportMd += `| **COMPOSITE AVERAGE** | **≥ 80.0** | **${avgOverall}/100** | **${avgOverall >= 80 ? 'PASS ✅' : 'FLAG ⚠️'}** |\n\n`;
+reportMd += `| **Pillar 5: Lead Capture & Preliminary Ticket** | ≥ 80.0 | **${avgLeadCapture}** | ${avgLeadCapture >= 80 ? 'PASS ✅' : 'FLAG ⚠️'} |\n`;
+reportMd += `| **Gate 2/3 Speech Truthfulness & Safety** | 300/300 | **${speechTruthPassCount}/${calls.length}** | ${speechViolationsTotal === 0 ? 'PASS ✅' : 'FAIL ❌'} |\n`;
+reportMd += `| **COMPOSITE AVERAGE** | **≥ 80.0** | **${avgOverall}/100** | **${avgOverall >= 80 && speechViolationsTotal === 0 ? 'PASS ✅' : 'FLAG ⚠️'}** |\n\n`;
 
-reportMd += `## 2. Band Distribution\n\n`;
-reportMd += `- **EXCELLENT (90-100):** ${bandCounts.EXCELLENT || 0} calls\n`;
-reportMd += `- **STRONG (80-89):** ${bandCounts.STRONG || 0} calls\n`;
-reportMd += `- **ACCEPTABLE (70-79):** ${bandCounts.ACCEPTABLE || 0} calls\n`;
-reportMd += `- **NEEDS OPTIMIZATION (<70):** ${bandCounts.NEEDS_OPTIMIZATION || 0} calls\n\n`;
-
-reportMd += `## 3. Scenario Group Performance\n\n`;
+reportMd += `## 2. Scenario Group Performance\n\n`;
 reportMd += `| Scenario Group | Call Count | Average Mirofish Score |\n`;
 reportMd += `| :--- | :--- | :--- |\n`;
 for (const grp of Object.keys(groupScores)) {
@@ -227,15 +259,13 @@ for (const grp of Object.keys(groupScores)) {
   reportMd += `| \`${grp}\` | ${groupScores[grp].count} | **${avg}/100** |\n`;
 }
 
-reportMd += `\n## 4. Key Strengths Verified in Engine Execution\n\n`;
-reportMd += `1. **Zero-Delay Emergency Containment:** When burst pipe or water heater leak terms were detected, the bot immediately offered step-by-step main water shutoff guidance.\n`;
-reportMd += `2. **Address & Window Normalization:** Homeowner addresses and preferred dispatch time windows were 100% captured and normalized into structured dispatch tickets.\n`;
-reportMd += `3. **Instant SMS Confirmation:** Photo link consent achieved 100% confirmation across all 300 calls.\n`;
-
 fs.writeFileSync(REPORT_PATH, reportMd, 'utf8');
 console.log(`  Executive Report written to: ${REPORT_PATH}\n`);
 console.log('================================================================');
-console.log(`  MIROFISH AUDIT COMPLETE: ${calls.length}/${calls.length} CALLS PROCESSED (Avg: ${avgOverall}/100)`);
+console.log(`  MIROFISH AUDIT COMPLETE: ${calls.length}/${calls.length} CALLS | Avg: ${avgOverall}/100 | Speech Truth: ${speechTruthPassCount}/${calls.length}`);
 console.log('================================================================');
 
+if (speechViolationsTotal > 0 || avgOverall < 80) {
+  process.exit(1);
+}
 process.exit(0);

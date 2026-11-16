@@ -344,39 +344,29 @@ function runBehavioralAndSyncGate() {
     'media_stream_ws_guard.js',
     'portal_login_and_tenant_auth_engine.js',
     'voice_service_quality_telemetry_and_bargein_guard.js',
-    'plumbing_regional_and_lifecycle_sales_engine.js'
+    'plumbing_regional_and_lifecycle_sales_engine.js',
+    'plumbing_intake_engine.js',
+    'fsm_plumbing_dispatch_adapter.js',
+    'sms_outbound_sender.js',
+    'twilio_voice_webhook_guard.js',
+    'sms_inbound_engine.js',
+    'post_call_link_sender.js'
   ];
   let driftFiles = [];
   for (const f of syncFiles) {
     const p1 = path.join(PROD_APPS_DIR, f);
     const p2 = path.join(subDir, f);
-    if (!fs.existsSync(p1) && fs.existsSync(p2)) {
-      fs.copyFileSync(p2, p1);
-    } else if (fs.existsSync(p1) && !fs.existsSync(p2)) {
-      fs.copyFileSync(p1, p2);
-    }
     if (fs.existsSync(p1) && fs.existsSync(p2)) {
       const b1 = fs.readFileSync(p1, 'utf8').replace(/\r\n/g, '\n');
       const b2 = fs.readFileSync(p2, 'utf8').replace(/\r\n/g, '\n');
-      if (b1 !== b2) {
-        const m1 = fs.statSync(p1).mtimeMs;
-        const m2 = fs.statSync(p2).mtimeMs;
-        if (m2 >= m1) {
-          fs.copyFileSync(p2, p1);
-        } else {
-          fs.copyFileSync(p1, p2);
-        }
-      }
-      const after1 = fs.readFileSync(p1, 'utf8').replace(/\r\n/g, '\n');
-      const after2 = fs.readFileSync(p2, 'utf8').replace(/\r\n/g, '\n');
-      if (after1 !== after2) driftFiles.push(f);
+      if (b1 !== b2) driftFiles.push(f);
     } else {
       driftFiles.push(f);
     }
   }
   check('G9-ZERO-SPLIT-BRAIN: 02_Production_Apps and angel-voice-server are byte-synced',
     driftFiles.length === 0,
-    driftFiles.length === 0 ? 'All 7 core voice modules synced across root and container dir' : `Drift in: ${driftFiles.join(', ')}`);
+    driftFiles.length === 0 ? `All ${syncFiles.length} core voice modules verified byte-identical (read-only audit)` : `Drift in: ${driftFiles.join(', ')}`);
 
   // G10: Identity Extraction (rejects numbers/corporate nouns, extracts Name + Company in 1 utterance)
   try {

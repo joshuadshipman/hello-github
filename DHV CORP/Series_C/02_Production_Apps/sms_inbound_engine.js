@@ -41,16 +41,16 @@ const RECENT_MATCH_WINDOW_MS = parseInt(process.env.SMS_MATCH_WINDOW_MS || Strin
 // ---- Spanish parity (language is a first-class field on every reply) --------
 const SMS_STRINGS = {
   en: {
-    photosReceived: (n, ref) => `Thank you — ${n} photo${n === 1 ? '' : 's'} received and attached to your claim${ref ? ' ' + ref : ''}. Reply HELP for help or STOP to opt out.`,
-    textReceived: (ref) => `Thank you — your message was received${ref ? ' and added to claim ' + ref : ''}. If you were asked to send photos, please attach them to a text to this number. Reply HELP for help or STOP to opt out.`,
-    help: 'Agent Angel Auto Claims demo line. Text photos of your vehicle damage to this number to attach them to your claim report. Msg&data rates may apply. Reply STOP to opt out.',
-    stop: 'You have been unsubscribed from Agent Angel Auto Claims messages. No further messages will be sent. Reply START to resubscribe.',
+    photosReceived: (n, ref, isTrade = false) => `Thank you — ${n} photo${n === 1 ? '' : 's'} received and attached to your ${isTrade ? 'service request' : 'claim'}${ref ? ' ' + ref : ''}. Reply HELP for help or STOP to opt out.`,
+    textReceived: (ref, isTrade = false) => `Thank you — your message was received${ref ? ' and added to ' + (isTrade ? 'service request ' : 'claim ') + ref : ''}. If you were asked to send photos, please attach them to a text to this number. Reply HELP for help or STOP to opt out.`,
+    help: 'Agent Angel Service & Claims Intake line. Text photos of your issue to this number to attach them to your record. Msg&data rates may apply. Reply STOP to opt out.',
+    stop: 'You have been unsubscribed from Agent Angel messages. No further messages will be sent. Reply START to resubscribe.',
   },
   es: {
-    photosReceived: (n, ref) => `Gracias — ${n} foto${n === 1 ? '' : 's'} recibida${n === 1 ? '' : 's'} y adjuntada${n === 1 ? '' : 's'} a su reclamo${ref ? ' ' + ref : ''}. Responda AYUDA para ayuda o STOP para darse de baja.`,
-    textReceived: (ref) => `Gracias — su mensaje fue recibido${ref ? ' y agregado al reclamo ' + ref : ''}. Si le pedimos fotos, por favor adjúntelas a un mensaje de texto a este número. Responda AYUDA para ayuda o STOP para darse de baja.`,
-    help: 'Línea de demostración de Agent Angel Auto Claims. Envíe fotos de los daños de su vehículo a este número para adjuntarlas a su reporte de reclamo. Pueden aplicar tarifas de mensajes y datos. Responda STOP para darse de baja.',
-    stop: 'Se ha dado de baja de los mensajes de Agent Angel Auto Claims. No se enviarán más mensajes. Responda START para volver a suscribirse.',
+    photosReceived: (n, ref, isTrade = false) => `Gracias — ${n} foto${n === 1 ? '' : 's'} recibida${n === 1 ? '' : 's'} y adjuntada${n === 1 ? '' : 's'} a su ${isTrade ? 'solicitud de servicio' : 'reclamo'}${ref ? ' ' + ref : ''}. Responda AYUDA para ayuda o STOP para darse de baja.`,
+    textReceived: (ref, isTrade = false) => `Gracias — su mensaje fue recibido${ref ? ' y agregado a ' + (isTrade ? 'la solicitud ' : 'el reclamo ') + ref : ''}. Si le pedimos fotos, por favor adjúntelas a un mensaje de texto a este número. Responda AYUDA para ayuda o STOP para darse de baja.`,
+    help: 'Línea de recepción de Agent Angel. Envíe fotos del problema a este número para adjuntarlas a su expediente. Pueden aplicar tarifas de mensajes y datos. Responda STOP para darse de baja.',
+    stop: 'Se ha dado de baja de los mensajes de Agent Angel. No se enviarán más mensajes. Responda START para volver a suscribirse.',
   },
 };
 
@@ -406,9 +406,43 @@ function recordOptOut(dir, from, action, language) {
   } catch (e) { console.log('[SMS OPTOUT WARNING] ' + e.message); }
 }
 
-function getMessagingConsent(dir, phone) {
+function isOptedOut(dir, phone) {
+  if (typeof dir === 'string' && !phone && /^\+?\d[\d\s()-]{7,}$/.test(dir)) {
+    phone = dir;
+    dir = process.env.TRANSCRIPT_DIR || '';
+  }
+  if (!phone) return true;
+  const digits = String(phone).replace(/\D/g, '').slice(-10);
+  if (digits.length < 10) return true;
+  try {
+    const p = path.join(dir || '', 'sms_optouts.json');
+    if (fs.existsSync(p)) {
+      const list = JSON.parse(fs.readFileSync(p, 'utf8')) || [];
+      for (let i = list.length - 1; i >= 0; i--) {
+        const item = list[i];
+        const itemDigits = String(item.from || '').replace(/\D/g, '').slice(-10);
+        if (itemDigits === digits) {
+          if (item.action === 'STOP') return true;
+          if (item.action === 'START') return false;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[SMS OPTOUT READ ERROR — FAIL CLOSED]', e.message);
+    return true;
+  }
+  return false;
+}
+
+function getMessagingConsent(dir, phone, opts = {}) {
+  if (typeof dir === 'string' && (!phone || typeof phone === 'object') && /^\+?\d[\d\s()-]{7,}$/.test(dir)) {
+    opts = (phone && typeof phone === 'object') ? phone : {};
+    phone = dir;
+    dir = process.env.TRANSCRIPT_DIR || '';
+  }
   if (!phone) return { consented: false, reason: 'NO_PHONE' };
   const digits = String(phone).replace(/\D/g, '').slice(-10);
+  if (digits.length < 10) return { consented: false, reason: 'INVALID_PHONE' };
   try {
     const p = path.join(dir || '', 'sms_optouts.json');
     if (fs.existsSync(p)) {
@@ -427,7 +461,11 @@ function getMessagingConsent(dir, phone) {
       }
     }
   } catch (e) {
-    console.error('[SMS CONSENT READ ERROR]', e.message);
+    console.error('[SMS CONSENT READ ERROR — FAIL CLOSED]', e.message);
+    return { consented: false, reason: 'LEDGER_READ_ERROR_FAIL_CLOSED' };
+  }
+  if (opts && opts.requireAffirmativeConsent === true && opts.hasAffirmativeConsent !== true) {
+    return { consented: false, reason: 'AFFIRMATIVE_CONSENT_REQUIRED' };
   }
   return { consented: true, reason: 'NO_PRIOR_OPTOUT' };
 }
@@ -490,6 +528,7 @@ module.exports = {
   validateTwilioSignature,
   messageTwiml,
   getMessagingConsent,
+  isOptedOut,
   recordOptOut,
   fetchUrl,
   SMS_STRINGS,

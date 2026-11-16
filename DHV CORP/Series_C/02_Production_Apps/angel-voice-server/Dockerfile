@@ -1,37 +1,26 @@
-# Auto Claims Specialist — Twilio Voice Webhook Container
-# ========================================================
-# Production-grade containerized FNOL intake handler for +14699166767.
-#
-# VALIDATION GATE (added 2026-08-07):
-# The validate_specialist.js gate runs during docker build.
-# If ANY check fails, the build aborts and no container is created.
-# This prevents shipping untested stubs (the v1.0 fabricated-data incident).
-#
-# Checks enforced:
-#   G1: Syntax valid
-#   G2: No hardcoded ACORD payloads (John Doe, POL-99201, etc.)
-#   G3: ≥8 FNOL field captures, ≥8 questions, injury branching
-#   G4: Call recording enabled
-#   G5: Transcript archiving wired
-#   G6: Health endpoint exists
-#   G7: ACORD payload built from session data
-#   G8: SpeechResult extraction from Twilio
+# Auto Claims & Trade Specialists — Twilio Voice Webhook Container
+# ================================================================
+# Production-grade containerized intake & dispatch handler.
 
 FROM node:20-alpine
 
+ARG GIT_SHA=unknown
+ARG SERVICE_REVISION=local-build
+ENV GIT_SHA=$GIT_SHA
+ENV SERVICE_REVISION=$SERVICE_REVISION
+
 WORKDIR /app
 
-# Dependencies first (layer cache)
+# Dependencies first (layer cache) — fail build if package install fails
 COPY package*.json ./
-RUN npm ci --only=production 2>/dev/null || true
+RUN npm ci --only=production
 
 # Copy application code
 COPY . .
 
-# ══════════════════════════════════════════════════════════════
-# MANDATORY VALIDATION GATE — blocks build if ANY check fails
-# This is the systemic fix for the 2026-08-06 FNOL bot failure.
-# ══════════════════════════════════════════════════════════════
+# Pre-build syntax and module integrity verification
+RUN node -c voice_webhook_server.js && node -c claims_intake_engine.js && node -c specialist_engines.js && node -c plumbing_intake_engine.js && node -c fsm_plumbing_dispatch_adapter.js
+
 # Pre-create writable directories for logs, queues, and audits
 RUN mkdir -p /app/call_records/mirofish /app/outreach_queue /tmp/data /tmp/call_records && chown -R node:node /app /tmp/data /tmp/call_records
 

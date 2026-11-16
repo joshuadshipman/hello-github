@@ -19,6 +19,10 @@ const os = require('os');
 const LIVE_CALLS_STORE_PATH = path.join(os.homedir(), 'data', 'voice', 'live_calls_store.json');
 const customerIdentity = require('./customer_identity_engine');
 const secondListenerRagEngine = require('./second_listener_rag_engine');
+let plumbingIntakeSafety = null;
+try { plumbingIntakeSafety = require('./plumbing_intake_engine'); } catch (_) {}
+let fsmPlumbingAdapter = null;
+try { fsmPlumbingAdapter = require('./fsm_plumbing_dispatch_adapter'); } catch (_) {}
 
 function normalizePhone(p) {
   if (!p) return '';
@@ -128,19 +132,19 @@ const SPECIALISTS = {
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
         qProblem: `What plumbing issue can we help you with today?`,
-        containment: `If water is actively leaking or flowing, please turn off your main water shut-off valve or the valve under the fixture immediately to prevent structural damage.`,
-        containmentGas: `For your immediate safety, if you smell gas near your water heater or gas line, please do not touch any electrical switches or flames, shut off the gas valve only if safe to do so, and step outside while we dispatch an emergency technician.`,
-        containmentSewer: `To prevent sewage from overflowing further into your home, please stop running all faucets, showers, dishwashers, and toilets immediately until our technician arrives.`,
+        containment: `If water is actively leaking or flowing, please turn off your main water shut-off valve or the valve under the fixture immediately—only if the valve is in a dry, safe location away from standing water or electrical panels—to prevent structural damage.`,
+        containmentGas: `For your immediate safety, if you smell gas near your water heater or gas line, please do not touch any electrical switches or flames, shut off the gas valve only if safe to do so, and step outside while we alert our on-call emergency team and log your priority request.`,
+        containmentSewer: `To prevent sewage from overflowing further into your home, please stop running all faucets, showers, dishwashers, and toilets immediately while our on-call staff reviews your priority request.`,
         qUrgency: `Is this an emergency that needs someone out today, or would you like to schedule a visit?`,
-        qUrgencyKnownEmergency: `Since water is actively leaking, I have marked this as an emergency for priority dispatch today. What time window works best for our technician to arrive?`,
+        qUrgencyKnownEmergency: `Since water is actively leaking, I have marked this as an emergency for priority review today. What time window works best for you?`,
         qWindow: `What day and time window works best for you?`,
-        qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the issue? That way our technician quotes accurately from the truck with the right tools — and between you and me, those photos along with our full call transcript stream directly to your AxiRate dashboard and mobile app so your team has complete visibility before we arrive.`,
-        ackPhotos: `Awesome — I've dispatched the secure photo link to your mobile phone. Having photos on file ensures an accurate quote from the truck, the right tools on the first trip, and an instant record on your dashboard.`,
-        ackUrgent: `I'm so sorry to hear that, and I understand completely. I have flagged this as an emergency and marked your request for priority dispatch. Please take your time, we are here to help.`,
+        qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the issue? That way our on-call plumber can review the issue in advance and bring the right tools.`,
+        ackPhotos: `Thank you — I've queued the secure photo upload link for your mobile phone so our team can review your photos before heading out.`,
+        ackUrgent: `I'm so sorry to hear that, and I understand completely. I have flagged this as an emergency and marked your request for priority review by our on-call team. Please take your time, we are here to help.`,
         ack: `Thank you.`,
         qSummaryConfirm: `Let me confirm the details of your service request: {NAME}, at {ADDRESS}, for {PROBLEM}, marked as {URGENCY}, with requested time window {WINDOW}. Is all of that information accurate?`,
         ackSummary: `Thank you for confirming your service details.`,
-        closing: `Thank you, {NAME}. Your plumbing service job-ticket has been created with reference {REF} and sent to your phone via text. Transferring you over to Matthew, our demo host, to show you how these photos, audio, and instant dispatch controls appear live on your AxiRate dashboard.`,
+        closing: `Thank you, {NAME}. Your plumbing service job-ticket has been created with reference {REF} and queued for our on-call dispatch team to confirm your appointment window shortly.`,
         hints: 'leak, clog, burst pipe, water heater, drain, toilet, faucet, sewer, emergency, schedule, photos, photo link, yes, correct, accurate, español',
       },
       es: {
@@ -148,19 +152,19 @@ const SPECIALISTS = {
         selector: `For English, say English or press one.`,
         qAddress: `¿Cuál es la dirección del servicio, incluyendo la ciudad?`,
         qProblem: `¿En qué problema de plomería le podemos ayudar hoy?`,
-        containment: `Si el agua se está filtrando o fluyendo activamente, por favor cierre la llave de paso principal de agua o la válvula debajo del lavabo inmediatamente para evitar daños estructurales.`,
-        containmentGas: `Por su seguridad inmediata, si percibe olor a gas cerca del calentador o tubería, no toque interruptores eléctricos ni flamas, cierre la válvula de gas solo si es seguro hacerlo y salga de la propiedad mientras despachamos al técnico de emergencia.`,
-        containmentSewer: `Para evitar que las aguas negras sigan desbordándose en su hogar, por favor deje de usar inmediatamente todas las llaves de agua, regaderas, lavavajillas e inodoros hasta que llegue nuestro técnico.`,
+        containment: `Si el agua se está filtrando o fluyendo activamente, por favor cierre la llave de paso principal de agua o la válvula debajo del lavabo inmediatamente—solo si se encuentra en un lugar seco y seguro lejos de cables eléctricos—para evitar daños estructurales.`,
+        containmentGas: `Por su seguridad inmediata, si percibe olor a gas cerca del calentador o tubería, no toque interruptores eléctricos ni flamas, cierre la válvula de gas solo si es seguro hacerlo y salga de la propiedad mientras alertamos a nuestro equipo de guardia.`,
+        containmentSewer: `Para evitar que las aguas negras sigan desbordándose en su hogar, por favor deje de usar inmediatamente todas las llaves de agua, regaderas, lavavajillas e inodoros mientras nuestro equipo revisa su solicitud prioritaria.`,
         qUrgency: `¿Es una emergencia que necesita a alguien hoy mismo, o desea programar una visita?`,
-        qUrgencyKnownEmergency: `Dado que el agua se está filtrando activamente, he marcado esto como emergencia para despacho prioritario hoy mismo. ¿Qué horario le funciona mejor para la llegada del técnico?`,
+        qUrgencyKnownEmergency: `Dado que el agua se está filtrando activamente, he marcado esto como emergencia para revisión prioritaria hoy mismo. ¿Qué horario le funciona mejor?`,
         qWindow: `¿Qué día y horario le funciona mejor?`,
-        qPhotos: `¿Puedo enviarle un enlace seguro por texto ahora mismo{PHOTO_PHONE_TARGET} para subir fotos del problema? De esa forma el técnico cotiza con precisión desde el camión — y entre nosotros, esas fotos junto con la transcripción completa se transmiten directo a su panel en vivo de AxiRate y aplicación móvil para que tenga visibilidad total antes de llegar.`,
-        ackPhotos: `Excelente — he enviado el enlace de fotos seguro a su teléfono móvil. Tener fotos registradas garantiza una cotización precisa desde el camión, las herramientas adecuadas en el primer viaje y un registro instantáneo en su panel.`,
-        ackUrgent: `Lo siento mucho y comprendo perfectamente. Lo he marcado como una emergencia y su solicitud tiene despacho prioritario. No se preocupe, estamos aquí para ayudarle.`,
+        qPhotos: `¿Puedo enviarle un enlace seguro por texto ahora mismo{PHOTO_PHONE_TARGET} para subir fotos del problema? De esa forma nuestro plomero de guardia puede revisar el problema con anticipación.`,
+        ackPhotos: `Gracias — he preparado el enlace seguro de fotos para su teléfono móvil.`,
+        ackUrgent: `Lo siento mucho y comprendo perfectamente. Lo he marcado como una emergencia y su solicitud tiene revisión prioritaria de guardia. No se preocupe, estamos aquí para ayudarle.`,
         ack: `Gracias.`,
         qSummaryConfirm: `Permítame confirmar los detalles de su solicitud de servicio: {NAME}, en {ADDRESS}, por {PROBLEM}, marcado como {URGENCY}, con horario solicitado {WINDOW}. ¿Es correcta toda esta información?`,
         ackSummary: `Gracias por confirmar los detalles de su servicio.`,
-        closing: `Gracias, {NAME}. Su solicitud de servicio de plomería ha sido registrada con la referencia {REF} y enviada por texto a su teléfono móvil. Le comunico con Matthew, nuestro presentador de demostración, para mostrarle cómo estas fotos, audio y controles de despacho se visualizan en vivo en su panel de AxiRate.`,
+        closing: `Gracias, {NAME}. Su solicitud de servicio de plomería ha sido registrada con la referencia {REF} y nuestro equipo de guardia confirmará su horario en breve.`,
         hints: 'fuga, obstrucción, tubería rota, calentador de agua, drenaje, inodoro, llave, alcantarillado, emergencia, cita, fotos, enlace de fotos, sí, correcto, exacto, English',
       },
     },
@@ -176,7 +180,7 @@ const SPECIALISTS = {
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
         qProblem: `What heating or cooling issue are you experiencing today?`,
-        containment: `For your comfort and system safety, please switch the thermostat to off so the compressor does not overheat before our technician arrives.`,
+        containment: `For your comfort and system safety, please switch the thermostat to off so the compressor does not overheat while our on-call team reviews your request.`,
         qUrgency: `Is this an emergency that needs someone out today, or would you like to schedule a visit?`,
         qWindow: `What day and time window works best for you?`,
         qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of your unit or thermostat?`,
@@ -260,7 +264,7 @@ const SPECIALISTS = {
         selector: `Para español, diga español o presione dos.`,
         qAddress: `What is the service address, including the city?`,
         qProblem: `What electrical issue can our licensed electricians help you with today?`,
-        containment: `For your immediate safety, please stay completely clear of the sparking breaker panel or any exposed wiring until our licensed electrician arrives.`,
+        containment: `For your immediate safety, please stay completely clear of the sparking breaker panel or any exposed wiring while our licensed electrical team reviews your priority request.`,
         qUrgency: `Is this an emergency power or safety issue today, or would you like to schedule a visit?`,
         qWindow: `What day and time window works best for you?`,
         qPhotos: `Can I text you a secure link right now{PHOTO_PHONE_TARGET} to upload photos of the panel or fixture?`,
@@ -640,10 +644,12 @@ function createSession(specialist, callSid, fromNumber, opts) {
       displayName: spec.displayName,
       mode: mode,
       emergency: false,
+      dispatchState: 'REQUEST_CAPTURED',
       language: 'en',
       matchedProspect: matchedProspect ? matchedProspect.name : null,
       callerName: null
     },
+    compositeDemo: Boolean(opts && opts.compositeDemo),
   };
 }
 
@@ -987,19 +993,24 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
     };
   }
 
-  // Explicit User Demand for a Human Representative / Operator
+  // Explicit User Demand for a Human Representative / Operator (Gate 2 & Gate 5 De-Escalation Transfer)
   const humanRepRegex = /\b(human|representative|operator|real person|live agent|talk to a (person|human|representative|manager|agent)|speak (to|with) a (person|human|representative|manager|agent)|speak (to|with) someone|speak to a manager|transfer me|customer service|persona|humano|representante|operador|hablar con (una persona|un humano|alguien)|persona real|atenci[óo]n al cliente)\b/i;
   if (userSpeech && humanRepRegex.test(userSpeech)) {
+    session.transferToHuman = true;
+    session.routeChoice = 'human_escalation';
+    session.ticket.transferToHuman = true;
+    session.ticket.humanEscalationRequested = true;
+    session.ticket.dispatchState = 'DISPATCH_UNAVAILABLE_HUMAN_ESCALATION';
     const cur = flow[Math.max(0, session.step - 1)] || flow[0];
     const qPrompt = cur.q === 'greeting'
       ? (lang === 'es' ? '¿Me puede indicar su nombre y apellido y si este es el mejor número para contactarle?' : 'May I have your first and last name, and is this the best phone number to reach you?')
       : t(session.specialist, lang, cur.q);
     const text = lang === 'es'
-      ? `Por favor tenga en cuenta que esta es una línea de servicio automatizada sin operadores humanos en vivo. Para asegurar que su solicitud reciba atención y despacho prioritario de inmediato, permítame registrar sus datos: ${qPrompt}`
-      : `Please note that this is an automated intake service line with no <phoneme alphabet="ipa" ph="laɪv">live</phoneme> human operators. To ensure your request receives immediate priority dispatch, let me record your details: ${qPrompt}`;
+      ? `Por supuesto — estoy transfiriendo su llamada directamente a nuestro personal de guardia ahora mismo. Si la línea está ocupada, también puedo dejar registrados sus datos para devolución prioritaria: ${qPrompt}`
+      : `Of course — I am connecting your call directly to our on-call human staff right now. In case the line is busy, let me also log your callback details for immediate priority follow-up: ${qPrompt}`;
     session.transcript += '\nCaller: ' + userSpeech;
     session.transcript += '\n' + spec.displayName + ': ' + text;
-    return { speechChunks: [{ voice: 'agent', text }], isFinal: false };
+    return { speechChunks: [{ voice: 'agent', text }], isFinal: false, transferToHuman: true, routeChoice: 'human_escalation' };
   }
 
   const answered = flow[session.step - 1];
@@ -1032,6 +1043,18 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
     const detectedCat = classifyPlumbingCategory(userSpeech, session.ticket.plumbingCategory);
     if (detectedCat) {
       session.ticket.plumbingCategory = detectedCat;
+    }
+    if (plumbingIntakeSafety && typeof plumbingIntakeSafety.triageLifeSafety === 'function') {
+      const safetyVerdict = plumbingIntakeSafety.triageLifeSafety(userSpeech);
+      if (safetyVerdict && safetyVerdict.isLifeSafetyEmergency) {
+        session.ticket.lifeSafetyTriage = {
+          hazardId: safetyVerdict.hazardId,
+          priority: safetyVerdict.priority,
+          transferToHuman: Boolean(safetyVerdict.transferToHuman),
+          escalationReason: safetyVerdict.escalationReason
+        };
+        session.ticket.humanEscalationReady = true;
+      }
     }
   }
   if (isEmergencySpoken || session.ticket.emergency) {
@@ -1526,7 +1549,7 @@ function evaluateTurn(session, userSpeech, { language, digits, isSilenceTimeout,
   const rawFinalName = session.fnolData?.callerName || session.ticket?.callerName;
   const cleanFinalName = (rawFinalName && /[a-zA-ZÀ-ÿ]{2,}/.test(rawFinalName) && !/\d/.test(rawFinalName)) ? rawFinalName.trim() : (lang === 'es' ? 'estimado cliente' : 'valued customer');
 
-  if (session.mode === 'sales' || session.specialist === 'plumbing') {
+  if (session.mode === 'sales' || session.compositeDemo === true) {
     // Dynamic handoff from Angel to Demo Host Matthew
     session.mode = 'sales';
     session.salesStep = 1;
